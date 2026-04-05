@@ -1,0 +1,8 @@
+{
+    "Core": true,
+    "Inventory": true,
+    "Products": true,
+    "Subscriptions": true,
+    "Suppliers": true,
+    "Reports": true
+}

@@ -7,8 +7,19 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "bezhansalleh/filament-shield": "^4.2",
+        "binarybuilds/filament-command-runner": "^1.2",
+        "crumbls/layup": "^1.2",
+        "filament/filament": "^5.4",
         "laravel/framework": "^13.0",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "livewire/livewire": "^4.2",
+        "nwidart/laravel-modules": "^13.0",
+        "predis/predis": "^3.4",
+        "sanzgrapher/filament-draggable-modal": "^1.0",
+        "spatie/laravel-activitylog": "^5.0",
+        "spatie/laravel-medialibrary": "^11.21",
+        "wikimedia/composer-merge-plugin": "^2.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -19,12 +30,12 @@
         "phpunit/phpunit": "^12.5.12"
     },
     "autoload": {
-        "psr-4": {
-            "App\\": "app/",
-            "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
-        }
-    },
+    "psr-4": {
+        "App\\": "app/",
+        "Database\\Factories\\": "database/factories/",
+        "Database\\Seeders\\": "database/seeders/"
+    }
+},
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
@@ -49,7 +60,8 @@
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
@@ -69,7 +81,12 @@
     "extra": {
         "laravel": {
             "dont-discover": []
-        }
+        },
+        "merge-plugin": {
+        "include": [
+            "Modules/*/composer.json"
+        ]
+    }
     },
     "config": {
         "optimize-autoloader": true,
@@ -77,7 +94,8 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "wikimedia/composer-merge-plugin": true
         }
     },
     "minimum-stability": "stable",

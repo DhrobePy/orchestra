@@ -1,0 +1,75 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Policies;
+
+use Illuminate\Foundation\Auth\User as AuthUser;
+use App\Models\DynamicModel__Stub;
+use Illuminate\Auth\Access\HandlesAuthorization;
+
+class DynamicModel__StubPolicy
+{
+    use HandlesAuthorization;
+    
+    public function viewAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ViewAny:DynamicModelStub');
+    }
+
+    public function view(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('View:DynamicModelStub');
+    }
+
+    public function create(AuthUser $authUser): bool
+    {
+        return $authUser->can('Create:DynamicModelStub');
+    }
+
+    public function update(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('Update:DynamicModelStub');
+    }
+
+    public function delete(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('Delete:DynamicModelStub');
+    }
+
+    public function deleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('DeleteAny:DynamicModelStub');
+    }
+
+    public function restore(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('Restore:DynamicModelStub');
+    }
+
+    public function forceDelete(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('ForceDelete:DynamicModelStub');
+    }
+
+    public function forceDeleteAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('ForceDeleteAny:DynamicModelStub');
+    }
+
+    public function restoreAny(AuthUser $authUser): bool
+    {
+        return $authUser->can('RestoreAny:DynamicModelStub');
+    }
+
+    public function replicate(AuthUser $authUser, DynamicModel__Stub $dynamicModelStub): bool
+    {
+        return $authUser->can('Replicate:DynamicModelStub');
+    }
+
+    public function reorder(AuthUser $authUser): bool
+    {
+        return $authUser->can('Reorder:DynamicModelStub');
+    }
+
+}
