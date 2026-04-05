@@ -2,42 +2,59 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PurchaseOrderItem extends Model
 {
-    protected $guarded = [];
+    use HasFactory;
 
-    protected $casts = [
-        'quantity'          => 'decimal:2',
-        'unit_cost'         => 'decimal:2',
-        'total_cost'        => 'decimal:2',
-        'received_quantity' => 'decimal:2',
+    protected $table = 'purchase_order_items';
+
+    protected $fillable = [
+        'purchase_order_id',
+        'item_type',
+        'item_description',
+        'item_code',
+        'variant_id',
+        'quantity',
+        'unit_of_measure',
+        'unit_price',
+        'total_value',
+        'received_qty',
+        'expected_delivery_date',
+        'notes',
     ];
 
-    protected static function booted(): void
-    {
-        static::saving(function ($item) {
-            $item->total_cost = $item->quantity * $item->unit_cost;
-        });
+    protected $casts = [
+        'quantity'               => 'decimal:2',
+        'unit_price'             => 'decimal:4',
+        'total_value'            => 'decimal:2',
+        'received_qty'           => 'decimal:2',
+        'expected_delivery_date' => 'date',
+    ];
 
-        static::saved(function ($item) {
-            $item->purchaseOrder->recalculateTotals();
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (self $item) {
+            $item->total_value = round((float) $item->quantity * (float) $item->unit_price, 2);
         });
     }
 
-    public function purchaseOrder()
+    // ── Relationships ──────────────────────────────────────────────────────────
+
+    public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
     }
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    public function remainingQuantity(): float
+    public function remainingQty(): float
     {
-        return $this->quantity - $this->received_quantity;
+        return max(0, (float) $this->quantity - (float) $this->received_qty);
     }
 }

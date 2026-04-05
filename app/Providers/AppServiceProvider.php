@@ -7,6 +7,7 @@ use App\Models\RoleConfiguration;
 use App\Observers\RoleModuleAccessObserver;
 use App\Services\DynamicMigrationService;
 use App\Services\DynamicModelGenerator;
+use App\Services\ProcurementService;
 use App\Services\RolePermissionService;
 use App\Services\SchemaCache;
 use Filament\Facades\Filament;
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(DynamicMigrationService::class);
         $this->app->singleton(SchemaCache::class);
         $this->app->singleton(RolePermissionService::class);
+        $this->app->singleton(ProcurementService::class);
     }
 
     public function boot(): void
