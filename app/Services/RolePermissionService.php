@@ -217,11 +217,16 @@ class RolePermissionService
             return null;
         }
 
-        return Cache::remember(
+        // Cache raw attribute arrays, never Eloquent objects.
+        // The database cache driver serializes PHP objects; deserializing full
+        // Eloquent models in a fresh request causes __PHP_Incomplete_Class.
+        $attrs = Cache::remember(
             "rbac_user_{$user->id}_config",
             self::CACHE_TTL,
-            fn () => RoleConfiguration::where('role_id', $roleId)->first()
+            fn () => RoleConfiguration::where('role_id', $roleId)->first()?->getAttributes()
         );
+
+        return $attrs ? (new RoleConfiguration)->newFromBuilder($attrs) : null;
     }
 
     private function getModuleAccess(mixed $user, int $moduleId): ?RoleModuleAccess
@@ -231,13 +236,15 @@ class RolePermissionService
             return null;
         }
 
-        return Cache::remember(
+        $attrs = Cache::remember(
             "rbac_user_{$user->id}_module_{$moduleId}",
             self::CACHE_TTL,
             fn () => RoleModuleAccess::where('role_id', $roleId)
                 ->where('module_id', $moduleId)
-                ->first()
+                ->first()?->getAttributes()
         );
+
+        return $attrs ? (new RoleModuleAccess)->newFromBuilder($attrs) : null;
     }
 
     private function getEntityAccess(mixed $user, int $entityId): ?RoleEntityAccess
@@ -247,12 +254,14 @@ class RolePermissionService
             return null;
         }
 
-        return Cache::remember(
+        $attrs = Cache::remember(
             "rbac_user_{$user->id}_entity_{$entityId}",
             self::CACHE_TTL,
             fn () => RoleEntityAccess::where('role_id', $roleId)
                 ->where('entity_id', $entityId)
-                ->first()
+                ->first()?->getAttributes()
         );
+
+        return $attrs ? (new RoleEntityAccess)->newFromBuilder($attrs) : null;
     }
 }

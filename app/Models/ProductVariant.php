@@ -20,4 +20,14 @@ class ProductVariant extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function prices()
+    {
+        return $this->hasMany(ProductPrice::class, 'variant_id');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

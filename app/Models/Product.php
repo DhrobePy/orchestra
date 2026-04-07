@@ -3,13 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 
 class Product extends Model implements HasMedia
 {
-    use SoftDeletes, InteractsWithMedia; // Remove LogsActivity for now
+    use InteractsWithMedia;
 
     protected $table = 'products';
     protected $guarded = [];
@@ -21,6 +20,18 @@ class Product extends Model implements HasMedia
         'is_active'  => 'boolean',
     ];
 
-    // If you want activity logging, you need to use the trait differently in v5
-    // For now, let's comment out the activity log functionality
+    public function variants()
+    {
+        return $this->hasMany(ProductVariant::class);
+    }
+
+    public function prices()
+    {
+        return $this->hasMany(ProductPrice::class);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

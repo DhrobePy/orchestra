@@ -54,7 +54,10 @@ class ProcurementService
             $supplier = Supplier::findOrFail($data['supplier_id']);
 
             $data['supplier_name'] = $supplier->company_name;
-            $data['po_number']     = $this->generatePoNumber();
+            // Use manually entered PO number if provided, otherwise auto-generate
+            $data['po_number']     = !empty(trim($data['po_number'] ?? ''))
+                ? trim($data['po_number'])
+                : $this->generatePoNumber();
             $data['created_by']    = Auth::id();
 
             // Calculate total
