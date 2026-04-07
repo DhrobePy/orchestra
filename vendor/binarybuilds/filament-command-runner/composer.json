@@ -1,0 +1,64 @@
+{
+    "name": "binarybuilds/filament-command-runner",
+    "description": "filament-command-runner is a Filament plugin that allows users to run artisan and shell commands directly from the Filament admin panel. All commands are executed in the background so users don't have to wait for them to finish. They can return later to view the output or optionally terminate a running command midway.",
+    "keywords": [
+        "binarybuilds", "laravel", "command runner", "artisan", "filament"
+    ],
+    "homepage": "https://github.com/binarybuilds/filament-command-runner",
+    "support": {
+        "issues": "https://github.com/binarybuilds/filament-command-runner/issues",
+        "source": "https://github.com/binarybuilds/filament-command-runner"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Srinath Reddy Dudi",
+            "email": "srinathreddydudi@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^4.0|^5.0",
+        "spatie/laravel-package-tools": "^1.15.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.0",
+        "nunomaduro/collision": "^8.0",
+        "nunomaduro/larastan": "^3.7",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "BinaryBuilds\\CommandRunner\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "BinaryBuilds\\CommandRunner\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "BinaryBuilds\\CommandRunner\\CommandRunnerServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
