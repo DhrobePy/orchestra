@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Sales;
 
 use App\Filament\Resources\Sales\CustomerResource\Pages;
+use App\Filament\Resources\Sales\CustomerResource\RelationManagers\LedgerEntriesRelationManager;
 use App\Models\Customer;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -150,25 +152,27 @@ class CustomerResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('payment_terms')
-                    ->options([
-                        'cod'     => 'COD',
-                        'advance' => 'Advance',
-                        'credit'  => 'Credit',
-                    ]),
+                    ->options(['cod' => 'COD', 'advance' => 'Advance', 'credit' => 'Credit']),
                 SelectFilter::make('is_active')
                     ->label('Status')
                     ->options([1 => 'Active', 0 => 'Inactive']),
             ])
             ->actions([
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
             ->bulkActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
+                BulkActionGroup::make([DeleteBulkAction::make()]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            LedgerEntriesRelationManager::class,
+        ];
     }
 
     public static function getPages(): array
@@ -176,6 +180,7 @@ class CustomerResource extends Resource
         return [
             'index'  => Pages\ListCustomers::route('/'),
             'create' => Pages\CreateCustomer::route('/create'),
+            'view'   => Pages\ViewCustomer::route('/{record}'),
             'edit'   => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }

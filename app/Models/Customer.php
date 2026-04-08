@@ -33,4 +33,9 @@ class Customer extends Model
     {
         return $this->hasMany(CreditOrder::class);
     }
+
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(CustomerLedger::class)->orderBy('date')->orderBy('id');
+    }
 }

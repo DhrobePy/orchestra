@@ -255,7 +255,10 @@ class CreditOrderWorkflowService
             // ── Update customer credit_balance ─────────────────────────────────
             $customer = $order->customer;
             if ($customer) {
-                $customer->increment('credit_balance', (float) $order->total);
+                // COALESCE handles NULL credit_balance — increment() silently fails on NULL columns
+                \DB::table('customers')
+                    ->where('id', $customer->id)
+                    ->update(['credit_balance' => \DB::raw('COALESCE(credit_balance, 0) + ' . (float) $order->total)]);
             }
         });
 
@@ -316,6 +319,26 @@ class CreditOrderWorkflowService
                 'payment_status' => $paymentStatus,
             ]);
 
+            // Create customer_payments record
+            $payment = \App\Models\CustomerPayment::create([
+                'customer_id'    => $order->customer_id,
+                'payment_date'   => now()->toDateString(),
+                'amount'         => $amount,
+                'payment_method' => $method,
+                'reference'      => $reference,
+                'notes'          => $notes,
+                'status'         => \App\Models\CustomerPayment::STATUS_CONFIRMED,
+            ]);
+
+            // Create payment_allocations record
+            \DB::table('payment_allocations')->insert([
+                'payment_id' => $payment->id,
+                'order_id'   => $order->id,
+                'amount'     => $amount,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
             // Customer ledger: credit entry (payment received)
             \DB::table('customer_ledger')->insert([
                 'customer_id'    => $order->customer_id,
@@ -324,16 +347,18 @@ class CreditOrderWorkflowService
                 'debit'          => 0,
                 'credit'         => $amount,
                 'balance'        => $newBalance,
-                'reference_type' => 'credit_order',
-                'reference_id'   => $order->id,
+                'reference_type' => 'customer_payment',
+                'reference_id'   => $payment->id,
                 'created_at'     => now(),
                 'updated_at'     => now(),
             ]);
 
-            // Reduce customer credit_balance
+            // Reduce customer credit_balance (COALESCE handles NULL)
             $customer = $order->customer;
             if ($customer) {
-                $customer->decrement('credit_balance', $amount);
+                \DB::table('customers')
+                    ->where('id', $customer->id)
+                    ->update(['credit_balance' => \DB::raw('COALESCE(credit_balance, 0) - ' . $amount)]);
             }
 
             $this->logHistory($order, $order->status, $order->status, $notes, [
@@ -386,6 +411,7 @@ class CreditOrderWorkflowService
         try {
             $previousBalance = (float) \DB::table('customer_ledger')
                 ->where('customer_id', $order->customer_id)
+                ->orderByDesc('date')
                 ->orderByDesc('id')
                 ->value('balance') ?? 0;
 
