@@ -7,6 +7,7 @@ use App\Models\BankAccount;
 use App\Models\Branch;
 use App\Models\Customer;
 use App\Models\CustomerPayment;
+use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Resources\Resource;
@@ -188,6 +189,12 @@ class CustomerPaymentResource extends Resource
             ->actions([
                 ViewAction::make(),
                 EditAction::make(),
+                Action::make('print_receipt')
+                    ->label('Print')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (CustomerPayment $record) => route('print.payment.receipt', $record->id))
+                    ->openUrlInNewTab(),
             ])
             ->defaultSort('payment_date', 'desc');
     }

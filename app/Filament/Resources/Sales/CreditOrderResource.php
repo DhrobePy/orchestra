@@ -8,6 +8,7 @@ use App\Models\CreditOrderItem;
 use App\Models\Customer;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -684,6 +685,12 @@ class CreditOrderResource extends Resource
             ->actions([
                 ViewAction::make(),
                 EditAction::make()->visible(fn (CreditOrder $record) => static::canEdit($record)),
+                Action::make('print_invoice')
+                    ->label('Print')
+                    ->icon('heroicon-o-printer')
+                    ->color('gray')
+                    ->url(fn (CreditOrder $record) => route('print.credit-order', $record->id))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 BulkActionGroup::make([

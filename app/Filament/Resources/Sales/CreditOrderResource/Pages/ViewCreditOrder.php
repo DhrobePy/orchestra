@@ -89,6 +89,14 @@ class ViewCreditOrder extends ViewRecord
     {
         return [
 
+            // ── Print Invoice ──────────────────────────────────────────────
+            Action::make('print_invoice')
+                ->label('Print Invoice')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn () => route('print.credit-order', $this->getRecord()->id))
+                ->openUrlInNewTab(),
+
             // ── Edit (draft only) ─────────────────────────────────────────
             EditAction::make()
                 ->visible(fn () =>

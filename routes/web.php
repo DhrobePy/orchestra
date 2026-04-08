@@ -15,6 +15,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/print/credit-order/{id}', [PrintController::class, 'creditOrderInvoice'])
         ->name('print.credit-order');
 
+    Route::get('/print/payment/{id}/receipt', [PrintController::class, 'paymentReceipt'])
+        ->name('print.payment.receipt');
+
     Route::get('/export/customer/{id}/ledger.csv', [PrintController::class, 'exportLedgerCsv'])
         ->name('export.customer.ledger.csv');
 });

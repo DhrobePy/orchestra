@@ -10,14 +10,18 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -39,6 +43,16 @@ class CustomerResource extends Resource
             Section::make('Customer Details')
                 ->columns(2)
                 ->schema([
+                    FileUpload::make('photo')
+                        ->label('Profile Photo')
+                        ->image()
+                        ->imageEditor()
+                        ->disk('public')
+                        ->directory('avatars/customers')
+                        ->maxSize(4096)
+                        ->columnSpanFull()
+                        ->nullable(),
+
                     TextInput::make('name')
                         ->label('Customer Name')
                         ->required()
@@ -97,10 +111,83 @@ class CustomerResource extends Resource
         ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make()
+                ->columns(4)
+                ->schema([
+                    ImageEntry::make('photo')
+                        ->label('')
+                        ->disk('public')
+                        ->circular()
+                        ->size(96)
+                        ->defaultImageUrl(fn () => 'https://ui-avatars.com/api/?name=Customer&background=random&size=96')
+                        ->columnSpan(1),
+
+                    Section::make()
+                        ->columnSpan(3)
+                        ->schema([
+                            TextEntry::make('name')
+                                ->label('Customer Name')
+                                ->size(\Filament\Support\Enums\TextSize::Large)
+                                ->weight(\Filament\Support\Enums\FontWeight::Bold),
+
+                            TextEntry::make('company_name')
+                                ->label('Company')
+                                ->placeholder('—'),
+
+                            Grid::make(3)->schema([
+                                TextEntry::make('phone')->label('Phone')->placeholder('—'),
+                                TextEntry::make('email')->label('Email')->placeholder('—'),
+                                TextEntry::make('payment_terms')
+                                    ->label('Terms')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'cod'     => 'gray',
+                                        'advance' => 'warning',
+                                        'credit'  => 'info',
+                                        default   => 'gray',
+                                    })
+                                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                                        'cod'     => 'COD',
+                                        'advance' => 'Advance',
+                                        'credit'  => 'Credit',
+                                        default   => strtoupper($state),
+                                    }),
+                            ]),
+                        ])
+                        ->extraAttributes(['style' => 'background:transparent;border:none;box-shadow:none;padding:0;']),
+                ]),
+
+            Section::make('Credit Information')
+                ->columns(3)
+                ->schema([
+                    TextEntry::make('credit_limit')
+                        ->label('Credit Limit')
+                        ->formatStateUsing(fn ($state) => '৳ ' . number_format((float) $state, 2)),
+
+                    TextEntry::make('credit_balance')
+                        ->label('Balance Due')
+                        ->formatStateUsing(fn ($state) => '৳ ' . number_format((float) $state, 2))
+                        ->color(fn ($state) => (float) $state > 0 ? 'danger' : 'success'),
+
+                    TextEntry::make('address')->label('Address')->placeholder('—'),
+                ]),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
+                ImageColumn::make('photo')
+                    ->label('')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name ?? 'C') . '&background=random&size=40')
+                    ->size(40),
+
                 TextColumn::make('name')
                     ->label('Name')
                     ->searchable()

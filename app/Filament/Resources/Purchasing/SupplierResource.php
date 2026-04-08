@@ -8,13 +8,18 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -22,7 +27,6 @@ use Filament\Tables\Table;
 class SupplierResource extends Resource
 {
     protected static ?string $model = Supplier::class;
-
 
     protected static string|\UnitEnum|null $navigationGroup = 'Purchasing';
 
@@ -41,6 +45,16 @@ class SupplierResource extends Resource
             Section::make('Company Details')
                 ->columns(2)
                 ->schema([
+                    FileUpload::make('photo')
+                        ->label('Profile Photo')
+                        ->image()
+                        ->imageEditor()
+                        ->disk('public')
+                        ->directory('avatars/suppliers')
+                        ->maxSize(4096)
+                        ->columnSpanFull()
+                        ->nullable(),
+
                     TextInput::make('company_name')
                         ->label('Company Name')
                         ->required()
@@ -182,10 +196,75 @@ class SupplierResource extends Resource
         ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make()
+                ->columns(4)
+                ->schema([
+                    ImageEntry::make('photo')
+                        ->label('')
+                        ->disk('public')
+                        ->circular()
+                        ->size(96)
+                        ->defaultImageUrl(fn () => 'https://ui-avatars.com/api/?name=Supplier&background=random&size=96')
+                        ->columnSpan(1),
+
+                    Section::make()
+                        ->columnSpan(3)
+                        ->schema([
+                            TextEntry::make('company_name')
+                                ->label('Company Name')
+                                ->size(\Filament\Support\Enums\TextSize::Large)
+                                ->weight(\Filament\Support\Enums\FontWeight::Bold),
+
+                            TextEntry::make('contact_person')
+                                ->label('Contact Person')
+                                ->placeholder('—'),
+
+                            Grid::make(3)->schema([
+                                TextEntry::make('phone')->label('Phone')->placeholder('—'),
+                                TextEntry::make('email')->label('Email')->placeholder('—'),
+                                TextEntry::make('status')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->color(fn (string $state): string => match ($state) {
+                                        'active'   => 'success',
+                                        'inactive' => 'warning',
+                                        'blocked'  => 'danger',
+                                        default    => 'gray',
+                                    }),
+                            ]),
+                        ])
+                        ->extraAttributes(['style' => 'background:transparent;border:none;box-shadow:none;padding:0;']),
+                ]),
+
+            Section::make('Details')
+                ->columns(3)
+                ->schema([
+                    TextEntry::make('supplier_code')->label('Supplier Code'),
+                    TextEntry::make('payment_terms')->label('Payment Terms'),
+                    TextEntry::make('current_balance')
+                        ->label('Balance')
+                        ->formatStateUsing(fn ($state) => 'BDT ' . number_format((float) $state, 2)),
+                    TextEntry::make('address')->label('Address')->placeholder('—'),
+                    TextEntry::make('city')->label('City')->placeholder('—'),
+                    TextEntry::make('tax_id')->label('Tax ID')->placeholder('—'),
+                ]),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
+                ImageColumn::make('photo')
+                    ->label('')
+                    ->disk('public')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->company_name ?? 'S') . '&background=random&size=40')
+                    ->size(40),
+
                 TextColumn::make('supplier_code')
                     ->label('Code')
                     ->searchable()
@@ -245,6 +324,7 @@ class SupplierResource extends Resource
                     ]),
             ])
             ->actions([
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -261,6 +341,7 @@ class SupplierResource extends Resource
         return [
             'index'  => Pages\ListSuppliers::route('/'),
             'create' => Pages\CreateSupplier::route('/create'),
+            'view'   => Pages\ViewSupplier::route('/{record}'),
             'edit'   => Pages\EditSupplier::route('/{record}/edit'),
         ];
     }

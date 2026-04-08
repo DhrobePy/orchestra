@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CompanySetting;
 use App\Models\CreditOrder;
 use App\Models\Customer;
 use Illuminate\Http\Request;
@@ -13,16 +14,18 @@ class PrintController extends Controller
     public function customerStatement(int $id, Request $request): Response
     {
         $customer = Customer::with('ledgerEntries')->findOrFail($id);
+        $company  = CompanySetting::get();
 
         $entries = $customer->ledgerEntries()
             ->when($request->from, fn ($q) => $q->whereDate('date', '>=', $request->from))
             ->when($request->to,   fn ($q) => $q->whereDate('date', '<=', $request->to))
+            ->orderBy('date')
             ->orderBy('id')
             ->get();
 
         $totalDebit  = $entries->sum('debit');
         $totalCredit = $entries->sum('credit');
-        $opening     = 0;  // Opening balance (first row's balance - first row's debit + first row's credit)
+        $opening     = 0;
         $closing     = (float) ($entries->last()?->balance ?? 0);
 
         $period = match (true) {
@@ -34,7 +37,7 @@ class PrintController extends Controller
 
         return response(
             view('print.customer-statement', compact(
-                'customer', 'entries', 'totalDebit', 'totalCredit', 'opening', 'closing', 'period'
+                'customer', 'company', 'entries', 'totalDebit', 'totalCredit', 'opening', 'closing', 'period'
             ))->render()
         )->header('Content-Type', 'text/html');
     }
@@ -47,8 +50,25 @@ class PrintController extends Controller
             'assignedBranch', 'approvedBy', 'statusHistory.changedBy',
         ])->findOrFail($id);
 
+        $company = CompanySetting::get();
+
         return response(
-            view('print.credit-order-invoice', compact('order'))->render()
+            view('print.credit-order-invoice', compact('order', 'company'))->render()
+        )->header('Content-Type', 'text/html');
+    }
+
+    /** Printable payment receipt */
+    public function paymentReceipt(int $id): Response
+    {
+        $payment = \App\Models\CustomerPayment::with([
+            'customer', 'bankAccount', 'branch',
+            'allocations.order',
+        ])->findOrFail($id);
+
+        $company = CompanySetting::get();
+
+        return response(
+            view('print.payment-receipt', compact('payment', 'company'))->render()
         )->header('Content-Type', 'text/html');
     }
 
@@ -56,6 +76,7 @@ class PrintController extends Controller
     public function exportLedgerCsv(int $id, Request $request)
     {
         $customer = Customer::findOrFail($id);
+        $company  = CompanySetting::get();
 
         $entries = $customer->ledgerEntries()
             ->when($request->from, fn ($q) => $q->whereDate('date', '>=', $request->from))
@@ -72,7 +93,7 @@ class PrintController extends Controller
             fputs($fh, "\xEF\xBB\xBF");
 
             // Title block
-            fputcsv($fh, ['CUSTOMER LEDGER STATEMENT']);
+            fputcsv($fh, [$company->company_name . ' — CUSTOMER LEDGER STATEMENT']);
             fputcsv($fh, ['Customer:', $customer->name]);
             fputcsv($fh, ['Company:',  $customer->company_name ?? '—']);
             fputcsv($fh, ['Phone:',    $customer->phone ?? '—']);

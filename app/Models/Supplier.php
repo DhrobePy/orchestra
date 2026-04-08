@@ -40,6 +40,7 @@ class Supplier extends Model
         'bank_routing_number',
         'currency',
         'notes',
+        'photo',
         'created_by',
     ];
 

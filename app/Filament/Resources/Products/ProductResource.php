@@ -14,15 +14,18 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
-use Filament\Tables\Columns\BadgeColumn;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -48,6 +51,16 @@ class ProductResource extends Resource
         return $schema->components([
             Section::make('Product Information')
                 ->schema([
+                    FileUpload::make('image')
+                        ->label('Product Image')
+                        ->image()
+                        ->imageEditor()
+                        ->disk('public')
+                        ->directory('products')
+                        ->maxSize(4096)
+                        ->columnSpanFull()
+                        ->nullable(),
+
                     Grid::make(2)
                         ->schema([
                             TextInput::make('name')
@@ -93,10 +106,60 @@ class ProductResource extends Resource
         ]);
     }
 
+    public static function infolist(Schema $schema): Schema
+    {
+        return $schema->components([
+            Section::make()
+                ->columns(4)
+                ->schema([
+                    ImageEntry::make('image')
+                        ->label('')
+                        ->disk('public')
+                        ->size(120)
+                        ->defaultImageUrl(fn () => null)
+                        ->columnSpan(1),
+
+                    Section::make()
+                        ->columnSpan(3)
+                        ->schema([
+                            TextEntry::make('name')
+                                ->label('Product Name')
+                                ->size(\Filament\Support\Enums\TextSize::Large)
+                                ->weight(\Filament\Support\Enums\FontWeight::Bold),
+
+                            Grid::make(3)->schema([
+                                TextEntry::make('sku')->label('SKU')->placeholder('—'),
+                                TextEntry::make('category')->label('Category')->placeholder('—'),
+                                TextEntry::make('unit')->label('Unit'),
+                            ]),
+
+                            Grid::make(2)->schema([
+                                TextEntry::make('price')
+                                    ->label('Base Price')
+                                    ->formatStateUsing(fn ($state) => $state ? '৳ ' . number_format((float) $state, 2) : '—'),
+
+                                TextEntry::make('is_active')
+                                    ->label('Status')
+                                    ->badge()
+                                    ->color(fn ($state) => $state ? 'success' : 'danger')
+                                    ->formatStateUsing(fn ($state) => $state ? 'Active' : 'Inactive'),
+                            ]),
+                        ])
+                        ->extraAttributes(['style' => 'background:transparent;border:none;box-shadow:none;padding:0;']),
+                ]),
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->label('')
+                    ->disk('public')
+                    ->size(40)
+                    ->defaultImageUrl(null),
+
                 TextColumn::make('name')
                     ->searchable()
                     ->sortable(),

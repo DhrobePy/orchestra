@@ -85,8 +85,26 @@
   {{-- Invoice header --}}
   <div class="invoice-header">
     <div>
-      <div class="brand">🏭 Orchestra ERP</div>
-      <div class="brand-sub">Credit Sales Invoice</div>
+      @if($company->logo)
+        <img src="{{ asset('storage/' . $company->logo) }}" alt="{{ $company->company_name }}" style="max-height:52px;max-width:200px;object-fit:contain;margin-bottom:4px;">
+        <div class="brand-sub">{{ $company->company_name }}</div>
+      @else
+        <div class="brand">{{ $company->company_name }}</div>
+      @endif
+      <div class="brand-sub">{{ $company->tagline ?: 'Credit Sales Invoice' }}</div>
+      @if($company->phone || $company->email)
+        <div class="brand-sub">
+          @if($company->phone) {{ $company->phone }} @endif
+          @if($company->phone && $company->email) &nbsp;·&nbsp; @endif
+          @if($company->email) {{ $company->email }} @endif
+        </div>
+      @endif
+      @if($company->address)
+        <div class="brand-sub">{{ $company->address }}{{ $company->city ? ', ' . $company->city : '' }}</div>
+      @endif
+      @if($company->tax_id)
+        <div class="brand-sub">TIN/VAT: {{ $company->tax_id }}</div>
+      @endif
     </div>
     <div class="inv-meta">
       <div class="inv-label">Invoice Number</div>
@@ -240,7 +258,7 @@
   </div>
 
   <div class="generated">
-    Computer-generated invoice · Orchestra ERP · {{ now()->format('d M Y H:i:s') }}
+    Computer-generated invoice · {{ $company->company_name }} · {{ now()->format('d M Y H:i:s') }}
   </div>
 
 </div>
