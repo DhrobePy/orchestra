@@ -24,7 +24,7 @@ class ManageFieldOptions extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-adjustments-horizontal';
+    protected static string|\BackedEnum|null $navigationIcon  = null;
     protected static string|UnitEnum|null    $navigationGroup = 'Schema Builder';
     protected static ?string                 $navigationLabel = 'Field Options';
     protected static ?int                    $navigationSort  = 3;

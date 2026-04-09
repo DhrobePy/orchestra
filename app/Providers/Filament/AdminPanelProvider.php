@@ -3,10 +3,10 @@
 namespace App\Providers\Filament;
 
 use Filament\Http\Middleware\Authenticate;
-use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -19,11 +19,11 @@ use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Crumbls\Layup\LayupPlugin;
 use Sanzgrapher\DraggableModal\DraggableModalPlugin;
 use BinaryBuilds\CommandRunner\CommandRunnerPlugin;
-
-
+use Hammadzafar05\MobileBottomNav\MobileBottomNav;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -37,6 +37,21 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->navigationGroups([
+                NavigationGroup::make('Sales')
+                    ->icon('heroicon-o-shopping-cart'),
+
+                NavigationGroup::make('Purchasing')
+                    ->icon('heroicon-o-truck'),
+
+                NavigationGroup::make('Products')
+                    ->icon('heroicon-o-cube'),
+
+                NavigationGroup::make('Settings')      ->icon('heroicon-o-cog-6-tooth'),
+
+                NavigationGroup::make('Schema Builder')
+                    ->icon('heroicon-o-rectangle-stack'),
+            ])
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -49,11 +64,11 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
-            LayupPlugin::make(),
-            DraggableModalPlugin::make(),
-            CommandRunnerPlugin::make()
-        ])
-
+                LayupPlugin::make(),
+                DraggableModalPlugin::make(),
+                CommandRunnerPlugin::make()->navigationIcon(null),
+                MobileBottomNav::make(),
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -68,7 +83,6 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
-
             ->routes(function () {
                 \Illuminate\Support\Facades\Route::get(
                     'dynamic/{table}',
@@ -85,8 +99,5 @@ class AdminPanelProvider extends PanelProvider
                     \App\Filament\Resources\DynamicRecords\Pages\EditDynamicRecord::class
                 )->name('dynamic.edit');
             });
-
     }
-
-    
 }

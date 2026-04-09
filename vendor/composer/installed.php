@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '2437c5a6c56f47891392c2f7a5ea09cf2b7ea6f8',
+        'reference' => 'd00970822ce9d6dbb93ac31596d7975c81e57881',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -355,6 +355,15 @@
             'aliases' => array(),
             'dev_requirement' => true,
         ),
+        'hammadzafar05/mobile-bottom-nav' => array(
+            'pretty_version' => 'v1.2',
+            'version' => '1.2.0.0',
+            'reference' => '7eaaa9cec8b99efea3cceb79657c8790da1a70c0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../hammadzafar05/mobile-bottom-nav',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'illuminate/auth' => array(
             'dev_requirement' => false,
             'replaced' => array(
@@ -598,7 +607,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '2437c5a6c56f47891392c2f7a5ea09cf2b7ea6f8',
+            'reference' => 'd00970822ce9d6dbb93ac31596d7975c81e57881',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

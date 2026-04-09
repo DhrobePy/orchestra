@@ -20,7 +20,7 @@ class ModuleResource extends Resource
 {
     protected static ?string $model = Module::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = null;
 
     protected static ?string $recordTitleAttribute = 'name';
 

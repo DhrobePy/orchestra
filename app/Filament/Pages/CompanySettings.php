@@ -19,7 +19,7 @@ class CompanySettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static string|\BackedEnum|null $navigationIcon  = 'heroicon-o-building-office';
+    protected static string|\BackedEnum|null $navigationIcon  = null;
     protected static string|UnitEnum|null    $navigationGroup = 'Settings';
     protected static ?string                 $navigationLabel = 'Company Settings';
     protected static ?int                    $navigationSort  = 10;
