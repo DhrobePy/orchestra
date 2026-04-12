@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchasing;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Purchasing\PurchaseOrderResource\Pages;
 use App\Filament\Resources\Purchasing\PurchaseOrderResource\RelationManagers;
 use App\Models\PurchaseOrder;
@@ -29,6 +30,8 @@ use Illuminate\Support\HtmlString;
 
 class PurchaseOrderResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = PurchaseOrder::class;
 
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchasing;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Purchasing\PurchasePaymentResource\Pages;
 use App\Models\PurchaseOrder;
 use App\Models\PurchasePayment;
@@ -24,6 +25,8 @@ use Filament\Tables\Table;
 
 class PurchasePaymentResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = PurchasePayment::class;
 
 

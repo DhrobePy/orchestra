@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Sales\CustomerResource\Pages;
 use App\Filament\Resources\Sales\CustomerResource\RelationManagers\LedgerEntriesRelationManager;
 use App\Models\Customer;
@@ -28,6 +29,8 @@ use Filament\Tables\Table;
 
 class CustomerResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = Customer::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Sales';

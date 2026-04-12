@@ -1,73 +1,29 @@
 <x-filament-panels::page>
 <style>
-/* ── Variables ─────────────────────────────────────────────────────────────── */
-:root {
-  --bpu-bg:        #ffffff;
-  --bpu-bg-alt:    #f8fafc;
-  --bpu-border:    #e2e8f0;
-  --bpu-text:      #0f172a;
-  --bpu-muted:     #64748b;
-  --bpu-label:     #374151;
-  --bpu-input-bg:  #ffffff;
-  --bpu-thead:     #1e293b;
-  --bpu-row-alt:   #f8fafc;
-  --bpu-row-hover: #f1f5f9;
-}
-.dark {
-  --bpu-bg:        #1e293b;
-  --bpu-bg-alt:    #0f172a;
-  --bpu-border:    rgba(255,255,255,.1);
-  --bpu-text:      #f1f5f9;
-  --bpu-muted:     #94a3b8;
-  --bpu-label:     #cbd5e1;
-  --bpu-input-bg:  #0f172a;
-  --bpu-thead:     #0f172a;
-  --bpu-row-alt:   rgba(255,255,255,.03);
-  --bpu-row-hover: rgba(255,255,255,.06);
-}
-
-/* ── Layout ────────────────────────────────────────────────────────────────── */
-.bpu-card {
-  background: var(--bpu-bg);
-  border: 1px solid var(--bpu-border);
-  border-radius: 12px;
-  padding: 22px 26px;
-  margin-bottom: 16px;
-}
-.bpu-section-title {
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--bpu-muted);
-  margin-bottom: 14px;
-}
-.bpu-label {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--bpu-label);
-  margin-bottom: 5px;
-}
-.bpu-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.bpu-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-
-/* ── Inputs ────────────────────────────────────────────────────────────────── */
-.bpu-input, .bpu-select {
+/* ── Shared input base ──────────────────────────────────────────────────────── */
+.bpu-control {
   width: 100%;
   padding: 8px 12px;
-  border: 1px solid var(--bpu-border);
-  border-radius: 7px;
+  border-radius: 8px;
   font-size: 13px;
-  color: var(--bpu-text);
-  background: var(--bpu-input-bg);
   transition: border-color .15s, box-shadow .15s;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
 }
-.bpu-input:focus, .bpu-select:focus {
+.dark .bpu-control {
+  background: #1e293b;
+  color: #f1f5f9;
+  border-color: rgba(255,255,255,.1);
+  color-scheme: dark;
+}
+.bpu-control:focus {
   outline: none;
   border-color: #f59e0b;
   box-shadow: 0 0 0 3px rgba(245,158,11,.18);
 }
+
+/* ── Select arrow ───────────────────────────────────────────────────────────── */
 .bpu-select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
@@ -75,103 +31,155 @@
   background-position: right 10px center;
   background-size: 16px;
   padding-right: 36px;
+  cursor: pointer;
 }
 
-/* ── Mechanism toggle ──────────────────────────────────────────────────────── */
-.bpu-mechanism-group { display: flex; gap: 10px; flex-wrap: wrap; }
-.bpu-mechanism-btn {
+/* ── Date input dark fix ────────────────────────────────────────────────────── */
+.dark input[type="date"] {
+  color-scheme: dark;
+}
+
+/* ── Mechanism toggle ───────────────────────────────────────────────────────── */
+.bpu-mech-btn {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  border: 1.5px solid var(--bpu-border);
-  border-radius: 9px;
+  padding: 11px 20px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--bpu-muted);
   cursor: pointer;
-  background: var(--bpu-bg-alt);
   transition: all .15s;
   user-select: none;
+  border: 1.5px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
 }
-.bpu-mechanism-btn.active {
+.dark .bpu-mech-btn {
+  border-color: rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04);
+  color: #94a3b8;
+}
+.bpu-mech-btn.active {
   border-color: #f59e0b;
-  background: rgba(245,158,11,.1);
-  color: #b45309;
-}
-.dark .bpu-mechanism-btn.active { color: #fde68a; }
-.bpu-mechanism-btn input[type=radio] { display: none; }
-
-/* ── Formula banner ────────────────────────────────────────────────────────── */
-.bpu-formula-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   background: rgba(245,158,11,.08);
-  border: 1px solid rgba(245,158,11,.3);
-  border-radius: 8px;
-  padding: 11px 16px;
-  font-size: 12px;
   color: #92400e;
-  margin-bottom: 18px;
 }
-.dark .bpu-formula-banner { color: #fde68a; background: rgba(245,158,11,.12); }
-.bpu-formula-icon { font-size: 18px; flex-shrink: 0; }
+.dark .bpu-mech-btn.active {
+  background: rgba(245,158,11,.12);
+  color: #fcd34d;
+}
+.bpu-mech-btn input[type=radio] { display: none; }
 
-/* ── Base price row ────────────────────────────────────────────────────────── */
-.bpu-base-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--bpu-border);
-}
-.bpu-base-price-wrap { display: flex; align-items: center; gap: 0; }
-.bpu-prefix {
-  background: var(--bpu-bg-alt);
-  border: 1px solid var(--bpu-border);
+/* ── Price cell prefix ──────────────────────────────────────────────────────── */
+.bpu-pfx {
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 6px 0 0 6px;
+  border: 1px solid #e2e8f0;
   border-right: none;
-  padding: 8px 10px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.dark .bpu-pfx {
+  background: #0f172a;
+  border-color: rgba(255,255,255,.1);
+  color: #64748b;
+}
+.bpu-cell-price {
+  width: 108px;
+  padding: 6px 8px;
+  text-align: right;
   font-size: 13px;
-  font-weight: 700;
-  color: var(--bpu-muted);
-  border-radius: 7px 0 0 7px;
+  font-weight: 600;
+  border-radius: 0 6px 6px 0;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  transition: border-color .12s;
 }
-.bpu-base-price-input {
-  width: 140px;
-  padding: 8px 12px;
-  border: 1px solid var(--bpu-border);
-  border-radius: 0 7px 7px 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--bpu-text);
-  background: var(--bpu-input-bg);
+.dark .bpu-cell-price {
+  background: #1e293b;
+  border-color: rgba(255,255,255,.1);
+  color: #f1f5f9;
+  color-scheme: dark;
 }
-.bpu-base-price-input:focus {
+.bpu-cell-price:focus {
   outline: none;
   border-color: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245,158,11,.18);
+  box-shadow: 0 0 0 2px rgba(245,158,11,.18);
 }
 
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
-.bpu-btn-recalc {
+/* ── Table ──────────────────────────────────────────────────────────────────── */
+.bpu-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bpu-table thead tr { background: #1e293b; }
+.dark .bpu-table thead tr { background: #0f172a; }
+.bpu-table thead th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #64748b;
+  white-space: nowrap;
+}
+.bpu-table thead th.r { text-align: right; }
+.bpu-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background .1s;
+}
+.dark .bpu-table tbody tr { border-bottom-color: rgba(255,255,255,.06); }
+.bpu-table tbody tr:nth-child(even) { background: #fafafa; }
+.dark .bpu-table tbody tr:nth-child(even) { background: rgba(255,255,255,.02); }
+.bpu-table tbody tr:hover { background: #f1f5f9; }
+.dark .bpu-table tbody tr:hover { background: rgba(255,255,255,.05); }
+.bpu-table tbody tr:last-child { border-bottom: none; }
+.bpu-table tbody td { padding: 11px 16px; vertical-align: middle; }
+.bpu-tr-base { background: rgba(245,158,11,.06) !important; }
+.dark .bpu-tr-base { background: rgba(245,158,11,.08) !important; }
+
+/* ── Badges ─────────────────────────────────────────────────────────────────── */
+.bpu-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-a { background: rgba(37,99,235,.1);  color: #2563eb; }
+.badge-b { background: rgba(5,150,105,.1);  color: #059669; }
+.badge-c { background: rgba(217,119,6,.1);  color: #d97706; }
+.badge-g { background: rgba(99,102,241,.1); color: #6366f1; }
+.badge-x { background: rgba(100,116,139,.1); color: #64748b; }
+.dark .badge-a { background: rgba(37,99,235,.18);  color: #93c5fd; }
+.dark .badge-b { background: rgba(5,150,105,.18);  color: #6ee7b7; }
+.dark .badge-c { background: rgba(217,119,6,.18);  color: #fcd34d; }
+.dark .badge-g { background: rgba(99,102,241,.18); color: #a5b4fc; }
+.dark .badge-x { background: rgba(100,116,139,.18); color: #94a3b8; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────────── */
+.bpu-btn-calc {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: #f59e0b;
   color: #1c1400;
   border: none;
-  padding: 9px 20px;
+  padding: 9px 22px;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: background .15s, transform .1s;
+  white-space: nowrap;
 }
-.bpu-btn-recalc:hover { background: #d97706; }
-.bpu-btn-recalc:active { transform: scale(.97); }
+.bpu-btn-calc:hover { background: #d97706; }
+.bpu-btn-calc:active { transform: scale(.97); }
+.bpu-btn-calc:disabled { opacity: .6; cursor: not-allowed; }
 
 .bpu-btn-save {
   display: inline-flex;
@@ -180,146 +188,30 @@
   background: #10b981;
   color: #fff;
   border: none;
-  padding: 11px 28px;
+  padding: 12px 32px;
   border-radius: 9px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background .15s, transform .1s;
-  box-shadow: 0 2px 8px rgba(16,185,129,.25);
+  box-shadow: 0 2px 10px rgba(16,185,129,.25);
 }
 .bpu-btn-save:hover { background: #059669; }
 .bpu-btn-save:active { transform: scale(.97); }
 .bpu-btn-save:disabled { opacity: .6; cursor: not-allowed; }
-
-/* ── Variants table ────────────────────────────────────────────────────────── */
-.bpu-table-wrap {
-  overflow-x: auto;
-  border-radius: 9px;
-  border: 1px solid var(--bpu-border);
-}
-.bpu-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-}
-.bpu-table thead tr {
-  background: var(--bpu-thead);
-}
-.bpu-table thead th {
-  padding: 10px 14px;
-  text-align: left;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: #94a3b8;
-  white-space: nowrap;
-}
-.bpu-table thead th.r { text-align: right; }
-.bpu-table tbody tr {
-  border-bottom: 1px solid var(--bpu-border);
-  transition: background .1s;
-}
-.bpu-table tbody tr:nth-child(even) { background: var(--bpu-row-alt); }
-.bpu-table tbody tr:hover { background: var(--bpu-row-hover); }
-.bpu-table tbody tr:last-child { border-bottom: none; }
-.bpu-table tbody td {
-  padding: 10px 14px;
-  vertical-align: middle;
-  color: var(--bpu-text);
-}
-
-/* ── Cell inputs ───────────────────────────────────────────────────────────── */
-.bpu-price-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0;
-}
-.bpu-price-pfx {
-  background: var(--bpu-bg-alt);
-  border: 1px solid var(--bpu-border);
-  border-right: none;
-  padding: 5px 7px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--bpu-muted);
-  border-radius: 5px 0 0 5px;
-}
-.bpu-cell-price {
-  width: 100px;
-  padding: 5px 8px;
-  border: 1px solid var(--bpu-border);
-  border-radius: 0 5px 5px 0;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: right;
-  background: var(--bpu-input-bg);
-  color: var(--bpu-text);
-  transition: border-color .12s;
-}
-.bpu-cell-price:focus {
-  outline: none;
-  border-color: #f59e0b;
-}
-.bpu-cell-date {
-  width: 128px;
-  padding: 5px 8px;
-  border: 1px solid var(--bpu-border);
-  border-radius: 5px;
-  font-size: 12px;
-  background: var(--bpu-input-bg);
-  color: var(--bpu-text);
-}
-.bpu-cell-date:focus { outline: none; border-color: #f59e0b; }
-
-/* ── Badges ────────────────────────────────────────────────────────────────── */
-.bpu-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.badge-demra     { background: rgba(37,99,235,.12);  color: #2563eb; }
-.badge-sirajgonj { background: rgba(5,150,105,.12);  color: #059669; }
-.badge-rampura   { background: rgba(217,119,6,.12);  color: #d97706; }
-.badge-grade     { background: rgba(99,102,241,.12); color: #6366f1; }
-.badge-other     { background: rgba(100,116,139,.1); color: #64748b; }
-.dark .badge-demra     { background: rgba(37,99,235,.2);  color: #93c5fd; }
-.dark .badge-sirajgonj { background: rgba(5,150,105,.2);  color: #6ee7b7; }
-.dark .badge-rampura   { background: rgba(217,119,6,.2);  color: #fcd34d; }
-.dark .badge-grade     { background: rgba(99,102,241,.2); color: #a5b4fc; }
-.dark .badge-other     { background: rgba(100,116,139,.2); color: #94a3b8; }
-
-/* ── Empty / no-product state ──────────────────────────────────────────────── */
-.bpu-empty {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--bpu-muted);
-  font-size: 14px;
-}
-.bpu-empty-icon { font-size: 40px; margin-bottom: 12px; opacity: .5; }
-
-/* ── Responsive ────────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .bpu-grid-2, .bpu-grid-3 { grid-template-columns: 1fr; }
-  .bpu-base-row { flex-direction: column; align-items: stretch; }
-}
 </style>
 
-<div>
+<div class="space-y-4">
 
-  {{-- ── Product select ──────────────────────────────────────────────────── --}}
-  <div class="bpu-card">
-    <div class="bpu-section-title">Select Product to Update</div>
-    <div style="max-width:460px;">
-      <label class="bpu-label">Product</label>
-      <select class="bpu-select" wire:model.live="productId">
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  {{-- CARD: Product Selection                                                 --}}
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-6 shadow-sm">
+    <p class="mb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Step 1</p>
+    <h3 class="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-200">Select Product to Update</h3>
+    <div style="max-width:480px;">
+      <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">Product</label>
+      <select class="bpu-control bpu-select" wire:model.live="productId">
         <option value="">— Choose a product —</option>
         @foreach($this->getProductOptions() as $id => $name)
           <option value="{{ $id }}">{{ $name }}</option>
@@ -330,39 +222,60 @@
 
   @if($productId && count($variantRows) > 0)
 
-  {{-- ── Pricing mechanism ───────────────────────────────────────────────── --}}
-  <div class="bpu-card">
-    <div class="bpu-section-title">Pricing Mechanism — <span style="color:var(--bpu-text);font-weight:700;">{{ $productName }}</span></div>
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  {{-- CARD: Pricing Mechanism                                                 --}}
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 p-6 shadow-sm">
 
-    <div class="bpu-mechanism-group">
-      <label class="bpu-mechanism-btn {{ $mechanism === 'manual' ? 'active' : '' }}">
+    <div class="mb-5 flex items-baseline gap-3">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Step 2</p>
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Pricing Mechanism</h3>
+      </div>
+      <span class="ml-auto rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-300">
+        {{ $productName }}
+      </span>
+    </div>
+
+    {{-- Mechanism toggle --}}
+    <div class="flex flex-wrap gap-3">
+      <label class="bpu-mech-btn {{ $mechanism === 'manual' ? 'active' : '' }}">
         <input type="radio" wire:model.live="mechanism" value="manual">
-        ✋ Manual
-        <span style="font-weight:400;font-size:11px;margin-left:2px;">— set each price independently</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        Manual
+        <span class="text-[11px] font-normal opacity-70">— set each price independently</span>
       </label>
-      <label class="bpu-mechanism-btn {{ $mechanism === 'formula' ? 'active' : '' }}">
+      <label class="bpu-mech-btn {{ $mechanism === 'formula' ? 'active' : '' }}">
         <input type="radio" wire:model.live="mechanism" value="formula">
-        ⚡ Formula
-        <span style="font-weight:400;font-size:11px;margin-left:2px;">— derive from base price</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        Formula
+        <span class="text-[11px] font-normal opacity-70">— derive from base price</span>
       </label>
     </div>
 
+    {{-- ── Formula controls ── --}}
     @if($mechanism === 'formula')
-    <div style="margin-top:20px;">
-      <div class="bpu-formula-banner">
-        <span class="bpu-formula-icon">📐</span>
-        <div>
-          <strong>Weight formula:</strong>
-          price = round( (base ÷ {{ $baseWeight }}) × weight, nearest <strong>{{ $weightRounding }}</strong> ) + <strong>{{ $weightPremium }}</strong> BDT
+    <div class="mt-5 space-y-5">
+
+      {{-- Formula explanation banner --}}
+      <div class="flex items-start gap-3 rounded-lg border border-amber-200 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-900/20 px-4 py-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        <p class="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+          <strong>Formula:</strong>
+          price = round( (base ÷ <strong>{{ $baseWeight }}</strong>) × weight, nearest <strong>{{ $weightRounding }}</strong> )
+          + <strong>{{ $weightPremium }}</strong> BDT
           &nbsp;·&nbsp;
-          <strong>Branch premium:</strong> + <strong>{{ $branchPremium }}</strong> BDT per non-base branch
-        </div>
+          Non-base branches: + <strong>{{ $branchPremium }}</strong> BDT
+        </p>
       </div>
 
-      <div class="bpu-grid-2" style="margin-bottom:14px;">
+      {{-- Base branch + weight --}}
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label class="bpu-label">Base Branch <span style="font-weight:400;color:var(--bpu-muted);">(reference / lowest price)</span></label>
-          <select class="bpu-select" wire:model.live="baseBranchId">
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+            Base Branch <span class="font-normal text-gray-400">(reference / lowest price)</span>
+          </label>
+          <select class="bpu-control bpu-select" wire:model.live="baseBranchId">
             <option value="">— select base branch —</option>
             @foreach($branchOptions as $id => $name)
               <option value="{{ $id }}">{{ $name }}</option>
@@ -370,72 +283,88 @@
           </select>
         </div>
         <div>
-          <label class="bpu-label">Base Weight (kg)</label>
-          <input type="number" class="bpu-input" wire:model.live="baseWeight" min="1" step="0.01">
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">Base Weight (kg)</label>
+          <input type="number" class="bpu-control" wire:model.live="baseWeight" min="1" step="0.01">
         </div>
       </div>
 
-      <div class="bpu-grid-3" style="margin-bottom:4px;">
+      {{-- Premiums row --}}
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
-          <label class="bpu-label">Branch Premium (৳)</label>
-          <input type="number" class="bpu-input" wire:model.live="branchPremium" step="0.01"
-                 placeholder="e.g. 10">
-          <div style="font-size:11px;color:var(--bpu-muted);margin-top:4px;">Added per non-base branch</div>
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">Branch Premium (৳)</label>
+          <input type="number" class="bpu-control" wire:model.live="branchPremium" step="0.01" placeholder="e.g. 10">
+          <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Added per non-base branch</p>
         </div>
         <div>
-          <label class="bpu-label">Weight Rounding</label>
-          <input type="number" class="bpu-input" wire:model.live="weightRounding" min="1" step="1"
-                 placeholder="e.g. 5">
-          <div style="font-size:11px;color:var(--bpu-muted);margin-top:4px;">Round to nearest N BDT</div>
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">Weight Rounding</label>
+          <input type="number" class="bpu-control" wire:model.live="weightRounding" min="1" step="1" placeholder="e.g. 5">
+          <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Round to nearest N BDT</p>
         </div>
         <div>
-          <label class="bpu-label">Weight Premium (৳)</label>
-          <input type="number" class="bpu-input" wire:model.live="weightPremium" step="0.01"
-                 placeholder="e.g. 25">
-          <div style="font-size:11px;color:var(--bpu-muted);margin-top:4px;">Added after proportional calc</div>
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">Weight Premium (৳)</label>
+          <input type="number" class="bpu-control" wire:model.live="weightPremium" step="0.01" placeholder="e.g. 25">
+          <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">Added after proportional calc</p>
         </div>
       </div>
 
-      <div class="bpu-base-row">
+      {{-- Base price + recalc --}}
+      <div class="flex flex-wrap items-end gap-4 border-t border-dashed border-gray-200 dark:border-white/10 pt-5">
         <div>
-          <label class="bpu-label">
-            Base Price (৳) &mdash;
-            {{ $baseWeight }}kg &nbsp;@&nbsp; {{ $branchOptions[$baseBranchId] ?? 'base branch' }}
+          <label class="mb-1.5 block text-xs font-semibold text-gray-600 dark:text-gray-400">
+            Base Price (৳) &mdash; {{ $baseWeight }}kg @ {{ $branchOptions[$baseBranchId] ?? 'base branch' }}
           </label>
-          <div class="bpu-base-price-wrap">
-            <span class="bpu-prefix">৳</span>
-            <input type="number" class="bpu-base-price-input"
-                   wire:model.live="basePrice" step="0.01" min="0" placeholder="e.g. 2040">
+          <div class="flex items-center">
+            <span class="bpu-pfx text-sm font-bold">৳</span>
+            <input
+              type="number"
+              wire:model.live="basePrice"
+              step="0.01" min="0"
+              placeholder="e.g. 2040"
+              style="width:160px;padding:8px 12px;font-size:15px;font-weight:700;border-radius:0 8px 8px 0;border:1px solid #e2e8f0;background:#fff;color:#0f172a;"
+              class="bpu-cell-price dark:[background:#1e293b] dark:[color:#f1f5f9] focus:outline-none focus:border-amber-400"
+            >
           </div>
         </div>
-        <button class="bpu-btn-recalc" wire:click="recalculate" type="button"
+        <button class="bpu-btn-calc" wire:click="recalculate" type="button"
                 wire:loading.attr="disabled" wire:target="recalculate">
-          <span wire:loading.remove wire:target="recalculate">⚡ Recalculate All</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          <span wire:loading.remove wire:target="recalculate">Recalculate All</span>
           <span wire:loading wire:target="recalculate">Calculating…</span>
         </button>
       </div>
+
     </div>
     @endif
   </div>
 
-  {{-- ── Variant prices table ─────────────────────────────────────────────── --}}
-  <div class="bpu-card" style="padding:22px 0;">
-    <div class="bpu-section-title" style="padding:0 26px 10px;">
-      Variant Prices
-      <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--bpu-muted);">
-        — {{ count($variantRows) }} variant{{ count($variantRows) !== 1 ? 's' : '' }}
-      </span>
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  {{-- CARD: Variant Prices Table                                              --}}
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 shadow-sm">
+
+    {{-- Table header --}}
+    <div class="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-6 py-4">
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500">Step 3</p>
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Variant Prices
+          <span class="ml-2 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            {{ count($variantRows) }} {{ Str::plural('variant', count($variantRows)) }}
+          </span>
+        </h3>
+      </div>
     </div>
 
-    <div class="bpu-table-wrap" style="border-radius:0;border-left:none;border-right:none;">
+    {{-- Table --}}
+    <div class="overflow-x-auto">
       <table class="bpu-table">
         <thead>
           <tr>
-            <th>Product / Display Name</th>
+            <th>Variant / Display Name</th>
             <th style="text-align:center;">Weight</th>
             <th style="text-align:center;">Grade</th>
-            <th>Factory / Branch</th>
-            <th class="r">Active Price (৳)</th>
+            <th>Branch / Factory</th>
+            <th class="r">Price (৳)</th>
             <th>Effective Date</th>
           </tr>
         </thead>
@@ -443,38 +372,41 @@
           @foreach($variantRows as $variantId => $row)
             @php
               $bl = strtolower($row['branch'] ?? '');
-              $bc = str_contains($bl,'demra')     ? 'badge-demra'
-                 : (str_contains($bl,'sirajgonj') ? 'badge-sirajgonj'
-                 : (str_contains($bl,'rampura')   ? 'badge-rampura'
-                 : 'badge-other'));
+              $bc = str_contains($bl, 'demra')      ? 'badge-a'
+                 : (str_contains($bl, 'sirajgonj') ? 'badge-b'
+                 : (str_contains($bl, 'rampura')   ? 'badge-c'
+                 : 'badge-x'));
               $isBase = $mechanism === 'formula'
                 && (float)$row['weight'] === (float)$baseWeight
                 && $row['branch_id'] == $baseBranchId;
             @endphp
-            <tr style="{{ $isBase ? 'background:rgba(245,158,11,.07);' : '' }}">
+            <tr class="{{ $isBase ? 'bpu-tr-base' : '' }}">
 
               {{-- Name --}}
               <td>
-                <div style="font-size:12px;color:var(--bpu-muted);max-width:260px;line-height:1.4;">
+                <p class="text-xs leading-snug text-gray-700 dark:text-gray-300 max-w-[260px]">
                   {{ $row['label'] }}
-                </div>
+                </p>
                 @if($isBase)
-                  <span style="font-size:10px;font-weight:700;color:#f59e0b;letter-spacing:.05em;">⭐ BASE</span>
+                  <span class="mt-0.5 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    Base variant
+                  </span>
                 @endif
               </td>
 
               {{-- Weight --}}
               <td style="text-align:center;">
-                <span style="font-weight:700;font-size:14px;color:var(--bpu-text);">{{ $row['weight'] ? (int)$row['weight'] : '—' }}</span>
-                <span style="font-size:10px;color:var(--bpu-muted);margin-left:1px;">kg</span>
+                <span class="text-sm font-bold text-gray-800 dark:text-gray-100">{{ $row['weight'] ? (int)$row['weight'] : '—' }}</span>
+                <span class="text-[10px] text-gray-400 dark:text-gray-500"> kg</span>
               </td>
 
               {{-- Grade --}}
               <td style="text-align:center;">
                 @if($row['grade'])
-                  <span class="bpu-badge badge-grade">{{ strtoupper($row['grade']) }}</span>
+                  <span class="bpu-badge badge-g">{{ strtoupper($row['grade']) }}</span>
                 @else
-                  <span style="color:var(--bpu-muted);">—</span>
+                  <span class="text-gray-300 dark:text-gray-600">—</span>
                 @endif
               </td>
 
@@ -485,8 +417,8 @@
 
               {{-- Price --}}
               <td style="text-align:right;">
-                <div class="bpu-price-wrap">
-                  <span class="bpu-price-pfx">৳</span>
+                <div class="inline-flex items-center justify-end">
+                  <span class="bpu-pfx">৳</span>
                   <input
                     type="number"
                     class="bpu-cell-price"
@@ -502,7 +434,8 @@
               <td>
                 <input
                   type="date"
-                  class="bpu-cell-date"
+                  class="bpu-control"
+                  style="width:140px;padding:5px 10px;font-size:12px;"
                   wire:model.defer="variantPrices.{{ $variantId }}.effective_date"
                 >
               </td>
@@ -514,32 +447,36 @@
     </div>
   </div>
 
-  {{-- ── Save footer ──────────────────────────────────────────────────────── --}}
-  <div style="display:flex;justify-content:flex-end;padding-bottom:32px;">
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  {{-- Save footer                                                             --}}
+  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
+  <div class="flex justify-end pb-8">
     <button class="bpu-btn-save" wire:click="save" type="button"
             wire:loading.attr="disabled" wire:target="save">
-      <span wire:loading.remove wire:target="save">✓&nbsp; Save All Prices</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span wire:loading.remove wire:target="save">Save All Prices</span>
       <span wire:loading wire:target="save">Saving…</span>
     </button>
   </div>
 
-  {{-- No variants found --}}
+  {{-- ── No variants found ──────────────────────────────────────────────── --}}
   @elseif($productId)
-  <div class="bpu-card">
-    <div class="bpu-empty">
-      <div class="bpu-empty-icon">📦</div>
-      No active variants found for this product.<br>
-      <span style="font-size:12px;">Add variants first from the <strong>Products</strong> section.</span>
+  <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-6 py-16 text-center shadow-sm">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-gray-400 dark:text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
     </div>
+    <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">No active variants found</p>
+    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Add variants first from the <strong>Products</strong> section.</p>
   </div>
 
-  {{-- Nothing selected yet --}}
+  {{-- ── Nothing selected ───────────────────────────────────────────────── --}}
   @else
-  <div class="bpu-card">
-    <div class="bpu-empty">
-      <div class="bpu-empty-icon">💰</div>
-      Select a product above to manage its variant prices.
+  <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 px-6 py-16 text-center shadow-sm">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-amber-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
     </div>
+    <p class="text-sm font-semibold text-gray-600 dark:text-gray-300">Select a product to get started</p>
+    <p class="mt-1 text-xs text-gray-400 dark:text-gray-500">Choose a product above to manage its variant prices.</p>
   </div>
   @endif
 

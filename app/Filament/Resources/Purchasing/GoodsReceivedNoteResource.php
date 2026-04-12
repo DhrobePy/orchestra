@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchasing;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Purchasing\GoodsReceivedNoteResource\Pages;
 use App\Models\GoodsReceivedNote;
 use App\Models\PurchaseOrder;
@@ -23,6 +24,8 @@ use Filament\Tables\Table;
 
 class GoodsReceivedNoteResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = GoodsReceivedNote::class;
 
 

@@ -37,7 +37,7 @@ class CreditOrder extends Model
 
     protected $fillable = [
         'customer_id', 'branch_id', 'assigned_branch_id',
-        'order_number', 'order_date', 'delivery_date', 'delivery_address',
+        'order_number', 'created_by', 'order_date', 'delivery_date', 'delivery_address',
         'status', 'priority', 'payment_status',
         'subtotal', 'discount', 'tax', 'total', 'paid_amount', 'balance',
         'notes',
@@ -75,6 +75,9 @@ class CreditOrder extends Model
         static::creating(function (self $order) {
             if (empty($order->order_number)) {
                 $order->order_number = static::generateOrderNumber();
+            }
+            if (empty($order->created_by) && auth()->check()) {
+                $order->created_by = auth()->id();
             }
             if (empty($order->status)) {
                 $order->status = self::STATUS_DRAFT;

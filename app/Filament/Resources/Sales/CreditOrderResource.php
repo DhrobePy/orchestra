@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Sales\CreditOrderResource\Pages;
 use App\Models\CreditOrder;
 use App\Models\CreditOrderItem;
@@ -34,6 +35,8 @@ use Illuminate\Support\HtmlString;
 
 class CreditOrderResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = CreditOrder::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Sales';
@@ -41,6 +44,21 @@ class CreditOrderResource extends Resource
     protected static ?int $navigationSort = 2;
 
     protected static ?string $recordTitleAttribute = 'order_number';
+
+    public static function getNavigationLabel(): string
+    {
+        return static::isStaffPanel() ? 'My Orders' : 'Credit Orders';
+    }
+
+    public static function getModelLabel(): string
+    {
+        return static::isStaffPanel() ? 'My Order' : 'Credit Order';
+    }
+
+    public static function getPluralModelLabel(): string
+    {
+        return static::isStaffPanel() ? 'My Orders' : 'Credit Orders';
+    }
 
     // ── RBAC ──────────────────────────────────────────────────────────────────
 
@@ -53,6 +71,9 @@ class CreditOrderResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
+        if (static::isStaffPanel()) {
+            return false;
+        }
         $user = Auth::user();
         if ($user->hasAnyRole(['super_admin', 'filament_admin'])) {
             return true;
@@ -63,6 +84,9 @@ class CreditOrderResource extends Resource
 
     public static function canDelete(Model $record): bool
     {
+        if (static::isStaffPanel()) {
+            return false;
+        }
         return Auth::user()->hasAnyRole(['super_admin', 'filament_admin'])
             && $record->status === CreditOrder::STATUS_DRAFT;
     }
@@ -590,6 +614,19 @@ class CreditOrderResource extends Resource
 
         $html .= '</div>';
         return new HtmlString($html);
+    }
+
+    // ── Query — staff panel sees only their own orders ────────────────────────
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = parent::getEloquentQuery();
+
+        if (static::isStaffPanel()) {
+            $query->where('created_by', auth()->id());
+        }
+
+        return $query;
     }
 
     // ── Table ─────────────────────────────────────────────────────────────────

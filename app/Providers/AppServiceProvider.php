@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\CreditOrder;
 use App\Models\Module;
+use App\Models\PurchaseOrder;
 use App\Models\RoleConfiguration;
+use App\Observers\CreditOrderObserver;
+use App\Observers\PurchaseOrderObserver;
 use App\Observers\RoleModuleAccessObserver;
 use App\Services\DynamicMigrationService;
 use App\Services\DynamicModelGenerator;
@@ -31,6 +35,10 @@ class AppServiceProvider extends ServiceProvider
     {
         // Auto-create locked role_module_access rows when a new Module is added
         Module::observe(RoleModuleAccessObserver::class);
+
+        // Dispatch notifications on order / PO lifecycle events
+        CreditOrder::observe(CreditOrderObserver::class);
+        PurchaseOrder::observe(PurchaseOrderObserver::class);
 
         Filament::serving(function () {
             try {

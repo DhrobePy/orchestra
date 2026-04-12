@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Products\ProductVariantResource\Pages\CreateProductVariant;
 use App\Filament\Resources\Products\ProductVariantResource\Pages\EditProductVariant;
 use App\Filament\Resources\Products\ProductVariantResource\Pages\ListProductVariants;
@@ -29,6 +30,8 @@ use Filament\Tables\Table;
 
 class ProductVariantResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = ProductVariant::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Products';

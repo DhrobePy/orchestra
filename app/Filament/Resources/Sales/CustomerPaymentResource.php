@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Sales;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Sales\CustomerPaymentResource\Pages;
 use App\Models\BankAccount;
 use App\Models\Branch;
@@ -25,6 +26,8 @@ use Filament\Schemas\Components\Utilities\Get;
 
 class CustomerPaymentResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model                          = CustomerPayment::class;
     protected static string|\BackedEnum|null $navigationIcon  = null;
     protected static ?string $navigationLabel                 = 'Customer Payments';

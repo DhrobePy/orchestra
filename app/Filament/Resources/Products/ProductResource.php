@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Products;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Products\ProductResource\Pages\CreateProduct;
 use App\Filament\Resources\Products\ProductResource\Pages\EditProduct;
 use App\Filament\Resources\Products\ProductResource\Pages\ListProducts;
@@ -31,6 +32,8 @@ use Filament\Tables\Table;
 
 class ProductResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = Product::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Products';

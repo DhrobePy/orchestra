@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Purchasing;
 
+use App\Filament\Concerns\ChecksStaffPanel;
 use App\Filament\Resources\Purchasing\SupplierResource\Pages;
 use App\Models\Supplier;
 use Filament\Actions\BulkActionGroup;
@@ -26,6 +27,8 @@ use Filament\Tables\Table;
 
 class SupplierResource extends Resource
 {
+    use ChecksStaffPanel;
+
     protected static ?string $model = Supplier::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Purchasing';
