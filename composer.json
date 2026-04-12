@@ -15,6 +15,7 @@
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.2",
+        "maatwebsite/excel": "^3.1",
         "nwidart/laravel-modules": "^13.0",
         "predis/predis": "^3.4",
         "sanzgrapher/filament-draggable-modal": "^1.0",
