@@ -34,6 +34,11 @@ class ProductVariantResource extends Resource
 
     protected static ?string $model = ProductVariant::class;
 
+    // ADDED: This prevents the route collision with products/{record}
+    protected static ?string $slug = 'product-variants';
+
+    protected static bool $shouldSkipAuthorization = true;
+
     protected static string|\UnitEnum|null $navigationGroup = 'Products';
 
     protected static ?int $navigationSort = 2;

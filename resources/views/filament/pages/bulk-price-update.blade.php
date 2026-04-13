@@ -1,4 +1,5 @@
 <x-filament-panels::page>
+@assets
 <style>
 /* ── Shared input base ──────────────────────────────────────────────────────── */
 .bpu-control {
@@ -200,6 +201,7 @@
 .bpu-btn-save:active { transform: scale(.97); }
 .bpu-btn-save:disabled { opacity: .6; cursor: not-allowed; }
 </style>
+@endassets
 
 <div class="space-y-4">
 
@@ -358,7 +360,7 @@
         $wire.saveWithPrices(collected);
       }
     }"
-    wire:key="price-table-{{ $productId }}"
+    wire:key="price-table-{{ $productId }}-{{ $saveCounter }}"
     class="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 shadow-sm"
   >
 

@@ -40,6 +40,9 @@ class BulkPriceUpdate extends Page
     public array  $branchOptions = [];
     public string $productName   = '';
 
+    // Incremented on each save so wire:key forces Alpine re-init with fresh DB values
+    public int $saveCounter = 0;
+
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     public function mount(): void
@@ -208,8 +211,9 @@ class BulkPriceUpdate extends Page
 
         Notification::make()->title('Prices saved successfully.')->success()->send();
 
-        // Reload to reflect saved state
+        // Reload to reflect saved state and bump counter so Alpine re-inits
         $this->loadProduct();
+        $this->saveCounter++;
     }
 
     // ── Helper for view ───────────────────────────────────────────────────────
