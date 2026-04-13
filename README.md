@@ -1,7 +1,41 @@
 # Orchestra ERP
 ### *A Schema-as-Data Enterprise Resource Planning System*
 
-> **Built by Dhrobe Islam** · Laravel 13 · Filament 5 · PHP 8.4 · MySQL
+> **Built by Dhrobe Islam** · Laravel 13 · Filament 5 · PHP 8.4 · MySQL · Livewire 4 · Alpine.js
+
+---
+
+## Table of Contents
+
+- [The Vision](#the-vision)
+- [Core Concept: Schema-as-Data](#core-concept-schema-as-data)
+- [Tech Stack](#tech-stack)
+- [Installation Guide](#installation-guide)
+- [System Architecture](#system-architecture)
+- [Modules Overview](#modules-overview)
+  - [Sales Module](#sales-module)
+  - [Purchasing Module](#purchasing-module)
+  - [Products Module](#products-module)
+  - [Dynamic Module System](#dynamic-module-system)
+  - [Reports Module](#reports-module)
+  - [Settings & Configuration](#settings--configuration)
+- [Dynamic Module Builder — Visual Guide](#dynamic-module-builder--visual-guide)
+  - [Step 1: Create a Module](#step-1-create-a-module)
+  - [Step 2: Define Entities](#step-2-define-entities)
+  - [Step 3: Define Fields](#step-3-define-fields)
+  - [Step 4: Use the Module](#step-4-use-the-module)
+  - [Field Types Reference](#field-types-reference)
+  - [Smart Foreign Key Resolution](#smart-foreign-key-resolution)
+  - [Special Entity Behaviours](#special-entity-behaviours)
+- [Schema Builder Reference](#schema-builder-reference)
+- [RBAC System](#rbac-system)
+- [Print & Document System](#print--document-system)
+- [Backup System](#backup-system)
+- [Notification System](#notification-system)
+- [Bulk Price Update](#bulk-price-update)
+- [Custom Report Builder](#custom-report-builder)
+- [File Structure](#file-structure)
+- [Changelog](#changelog)
 
 ---
 
@@ -18,7 +52,7 @@ This means:
 - A **flour mill** and a **SaaS company** can run on the same codebase
 - Adding a new "Shipment Tracking" module takes minutes, not months
 - Relationships between modules can be toggled on or off per client
-- Every entity, field, form, role, permission, and notification channel is configurable by the admin — not the developer
+- Every entity, field, form, role, permission, and notification is configurable — not hardcoded
 
 This is **enterprise ERP with the flexibility of a no-code platform**.
 
@@ -28,12 +62,11 @@ This is **enterprise ERP with the flexibility of a no-code platform**.
 
 ```
 Traditional ERP                    Orchestra
-────────────────                   ─────────────────────────────────
-Developer writes migration    →    Admin creates Entity in UI
-Developer writes model        →    DynamicModelGenerator creates it at runtime
+────────────────────────────────   ─────────────────────────────────────────
+Developer writes migration     →   Admin creates Entity in UI
+Developer writes Eloquent model→   DynamicModelGenerator creates it at runtime
 Developer writes Filament form →   DynamicRecordResource reads fields from DB
-Developer deploys             →    Admin saves Field Options → table is created
-                                   Done. Live immediately.
+Developer deploys to server    →   Admin saves → table is live immediately
 ```
 
 The three services that make this work:
@@ -41,757 +74,993 @@ The three services that make this work:
 | Service | What It Does |
 |---|---|
 | `DynamicModelGenerator` | Creates named Eloquent model classes at runtime using `eval()` |
-| `DynamicMigrationService` | Runs `Schema::table()` to add/modify/drop columns when Field Options are saved |
-| `SchemaCache` | Caches entity + field definitions so the DB isn't queried on every page render |
+| `DynamicMigrationService` | Runs `Schema::table()` to add/modify/drop columns when Field definitions are saved |
+| `DynamicRecordResource` | A single Filament resource that renders any dynamic table based on URL context |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Laravel 13.3 |
-| Admin Panel | Filament 5.4 |
-| Reactive UI | Livewire 4.2 |
-| Language | PHP 8.4 |
-| Database | MySQL (`orchestra_erp`) |
-| Cache | File (Redis-ready) |
-| Auth / RBAC | Filament Shield v4.2 + Spatie Permission |
-| Media | Spatie Media Library v11 |
-| Modules | nwidart/laravel-modules v11 |
-| Dev OS | macOS / zsh |
-
----
-
-## Architecture
-
-```
-orchestra/
-├── app/
-│   ├── Filament/
-│   │   ├── Pages/
-│   │   │   ├── ManageFieldOptions.php     # Visual field editor → creates DB columns
-│   │   │   ├── BulkPriceUpdate.php        # Bulk price adjustment by category/brand
-│   │   │   ├── ManageRoles.php            # [PLANNED] Visual role + permission matrix
-│   │   │   └── ManageNotifications.php    # [PLANNED] Notification channel configurator
-│   │   └── Resources/
-│   │       ├── DynamicRecords/            # ONE resource that serves ALL entities
-│   │       │   └── DynamicRecordResource.php
-│   │       ├── Entities/                  # Schema Builder: define tables
-│   │       ├── Fields/                    # Schema Builder: view field metadata
-│   │       ├── Modules/                   # Schema Builder: group entities
-│   │       └── Relationships/             # Schema Builder: define + toggle relations
-│   ├── Models/
-│   │   ├── Entity.php
-│   │   ├── Field.php
-│   │   ├── Module.php
-│   │   ├── Relationship.php
-│   │   ├── RoleConfiguration.php          # [PLANNED] Extended role config + limits
-│   │   ├── RoleModuleAccess.php           # [PLANNED] Per-module action toggles
-│   │   ├── RoleEntityAccess.php           # [PLANNED] Per-entity field-level control
-│   │   └── NotificationChannel.php        # [PLANNED] Configured delivery channels
-│   ├── Providers/
-│   │   └── AppServiceProvider.php         # Dynamically builds sidebar nav from DB
-│   └── Services/
-│       ├── DynamicModelGenerator.php
-│       ├── DynamicMigrationService.php
-│       ├── SchemaCache.php
-│       ├── RolePermissionService.php      # [PLANNED] Runtime permission + limit checks
-│       └── NotificationDispatcher.php     # [PLANNED] Route notifications to channels
-└── database/migrations/
-    ├── *_create_modules_table.php
-    ├── *_create_entities_table.php
-    ├── *_create_fields_table.php
-    ├── *_create_relationships_table.php
-    ├── *_create_role_configurations_table.php   # [PLANNED]
-    ├── *_create_role_module_access_table.php     # [PLANNED]
-    ├── *_create_role_entity_access_table.php     # [PLANNED]
-    ├── *_create_notification_channels_table.php  # [PLANNED]
-    ├── *_create_notification_templates_table.php # [PLANNED]
-    └── *_create_notification_rules_table.php     # [PLANNED]
-```
-
----
-
-## Modules Planned
-
-| Module | Status | Key Entities |
+| Layer | Technology | Version |
 |---|---|---|
-| **Products** | ✅ Schema defined | Product, Variant, Brand, Category, Product Price |
-| **Inventory** | ✅ Table exists | Inventory, Warehouse, Inventory Transaction |
-| **Suppliers** | ✅ Schema defined | Supplier, Supplier Ledger |
-| **Purchasing** | 🔄 In progress | Purchase Order, PO Item, GRN, GRN Item, Purchase Invoice, Purchase Return, Supplier Payment, Supplier Payment Allocation |
-| **Sales** | 🔄 Schema defined | Customer, Sales Order, SO Item, Invoice, Invoice Item, Customer Payment, Payment Allocation, Customer Ledger |
-| **Branches** | 📋 Planned | Branch, Petty Cash Account, Petty Cash Transaction |
-| **Fleet** | 📋 Planned | Vehicle, Driver, Trip Assignment, Trip Order, Fuel Log, Transport Expense, Vehicle Document, Vehicle Rental |
-| **Production** | 📋 Planned | Production Schedule |
-| **Accounting** | 📋 Planned | Chart of Accounts, Journal Entry, Transaction Line, Debit Voucher |
-| **Expenses** | 📋 Planned | Expense Category, Expense Subcategory, Expense Voucher |
-| **HR** | 📋 Planned | Department, Employee, Attendance, Leave Request |
-| **Banking** | 📋 Planned | Bank Account, Bank Transaction, Bank Transfer |
-| **Cash Management** | 📋 Planned | Petty Cash Account, Cash Verification Log, EOD Summary |
-| **Pricing** | 📋 Planned | Pricing Rule, Rule Condition, Rule Action |
-| **Returns** | 📋 Planned | Purchase Return, Purchase Return Item |
-| **Commodity** | 📋 Planned | Commodity, Shipment, Shipment Position |
-| **Subscriptions** | 📋 Planned | Subscription Plan, Subscription |
-| **Reports** | 📋 Planned | Report Template |
+| Framework | Laravel | 13.x |
+| Admin UI | Filament | 5.x |
+| Reactive components | Livewire | 4.x |
+| Frontend JS | Alpine.js | 3.x |
+| CSS | Tailwind CSS | 4.x (Vite) |
+| Database | MySQL | 8.x |
+| Language | PHP | 8.4 |
+| Permissions | Spatie Laravel Permission | — |
+| Authorization | Filament Shield | — |
+| Excel Export | Maatwebsite Excel | — |
+| Cloud Storage | Google Drive API | — |
 
 ---
 
-## The Admin Workflow
+## Installation Guide
 
-### Setting Up a New Entity (e.g. "Product")
+### Requirements
 
-1. **Schema Builder → Modules → Create**
-   Define the department: `Products`, icon, slug.
-
-2. **Schema Builder → Entities → Create**
-   Define the table: `Product`, table name: `products`, title field: `name`.
-
-3. **Schema Builder → Field Options**
-   Select `Product`. Add fields visually:
-   ```
-   name        | Text    | Required
-   sku         | Text    | Required
-   price       | Number  | Required
-   description | Textarea
-   is_active   | Boolean
-   ```
-   Click **Save Fields** → `DynamicMigrationService` runs `ALTER TABLE` → columns appear in MySQL immediately.
-
-4. **Schema Builder → Relationships → Create**
-   ```
-   Product  hasMany   Product Variant  (foreign: product_id)
-   Product  belongsTo Category         (foreign: category_id)
-   ```
-   Each relationship has an **is_active toggle** — disable without deleting.
-
-5. **Sidebar auto-updates**
-   `AppServiceProvider` reads active modules + entities from DB and registers Filament nav items. No deploy. No code change.
-
-6. **Navigate to Products → Create Record**
-   `DynamicRecordResource` reads the entity's fields, renders the form, handles CRUD — all dynamically.
+- PHP 8.4+
+- MySQL 8.0+
+- Composer 2.x
+- Node.js 20+ and npm
+- A Google Drive service account JSON (optional, for backups)
 
 ---
 
-## The Relationship Toggle System
-
-```
-Schema Builder → Relationships
-
-From            Type        To                  Active
-────────────    ────────    ────────────────    ──────
-Product         hasMany     Product Variant     ✅ ON
-Product         belongsTo   Brand               ✅ ON
-Sales Order     hasOne      Production Schedule ❌ OFF  ← client doesn't use production
-Trip Assignment hasMany     Trip Order          ✅ ON
-Vehicle         hasMany     Fuel Log            ❌ OFF  ← client doesn't track fuel
-```
-
----
-
-## Feature: Role & Permission Management System
-
-### Vision
-
-Standard role systems treat permissions as flat strings like `view_product`. This works for basic access but fails for enterprise needs where the question isn't just *can they do this?* but *how much?* and *under what conditions?*
-
-Orchestra treats permissions the same way it treats schema — **as data, not code**. Admins configure everything through a visual matrix. No permission strings are hardcoded. Every action, every limit, every restriction is a database row that can be toggled in real time.
-
-### Three Dimensions of Access Control
-
-**Dimension 1 — Boolean Action Toggles (per module)**
-
-For each module, the admin toggles each action on or off:
-
-| Action | Description |
-|---|---|
-| Can View | See records listed in this module |
-| Can Create | Create new records |
-| Can Edit | Edit existing records |
-| Can Delete | Soft-delete records |
-| Can Export | Export to Excel / PDF |
-| Can Import | Bulk import from file |
-| Can Print | Generate printable documents |
-| Can Approve | Approve pending workflows |
-| Can Reject | Reject submitted records |
-| Can Bulk Action | Perform operations on multiple records at once |
-
-**Dimension 2 — Numeric Limits (negotiated thresholds)**
-
-Some permissions aren't boolean — they carry a number the admin sets per role:
-
-| Limit | Example Use |
-|---|---|
-| `approval_limit` | Sales Manager can approve orders up to $10,000 |
-| `discount_limit_pct` | Sales Rep can give max 5% discount |
-| `max_order_value` | Field agent cannot create orders above $5,000 |
-| `max_discount_amount` | Cannot discount more than $500 per order |
-| `daily_create_limit` | Warehouse staff can only create 20 GRNs per day |
-| `daily_delete_limit` | Manager can delete max 5 records per day |
-| `credit_limit` | How much credit this role can extend to customers |
-| `max_items_per_order` | Cap line items on a single order |
-| `approval_escalation_hours` | Auto-escalate if not approved within N hours |
-
-**Dimension 3 — Scope Restrictions**
-
-| Restriction | Meaning |
-|---|---|
-| Own Records Only | User sees/edits only records they created |
-| Branch Records Only | User sees/edits only records from their assigned branch |
-| Requires Approval | All actions from this role need a higher role to approve |
-| Requires Second Approval | Critical actions need two independent approvers |
-| Hidden Fields | Specific fields (e.g. `cost_price`) invisible to this role |
-| Readonly Fields | Fields this role can see but not change |
-
-### Example Role Configurations
-
-```
-Role: CEO
-────────────────────────────────────────────────
-All modules:         FULL ACCESS
-Approval Limit:      Unlimited
-Discount Limit:      Unlimited
-Scope:               All branches, all records
-Requires Approval:   NO
-
-Role: Regional Sales Manager
-────────────────────────────────────────────────
-Sales module:        View, Create, Edit, Approve, Export
-Purchasing module:   View only
-Accounting module:   NO ACCESS
-Approval Limit:      $25,000
-Discount Limit:      10%
-Scope:               Branch records only (their region)
-Requires Approval:   YES — for orders above $25,000
-
-Role: Sales Representative
-────────────────────────────────────────────────
-Sales module:        View (own), Create (own)
-Can Edit:            Own records within 24 hours of creation only
-Can Delete:          NO
-Can Approve:         NO
-Max Order Value:     $5,000
-Discount Limit:      3%
-Daily Create Limit:  10 orders/day
-Hidden Fields:       cost_price, margin, supplier_cost
-Scope:               Own records only
-Requires Approval:   YES — all orders
-
-Role: Warehouse Staff
-────────────────────────────────────────────────
-Inventory module:    View, Create, Edit
-Purchasing module:   View GRN, Create GRN only
-Can Delete:          NO
-Can Export:          NO
-Can Approve:         NO
-Daily Create Limit:  30 GRNs/day
-Scope:               Their warehouse only
-
-Role: Accountant
-────────────────────────────────────────────────
-Accounting module:   Full Access
-Banking module:      View, Create, Edit
-Sales module:        View invoices only
-Can Delete:          NO
-Can Approve:         Journal Entries (up to $100,000)
-Hidden Fields:       Internal notes on customer records
-```
-
-### Entity-Level Overrides
-
-Beyond module-level settings, the admin can drill into specific entities to:
-- Hide specific fields from a role (e.g. Sales Rep cannot see `cost_price` on any product)
-- Set fields as readonly (e.g. Warehouse can see price but not change it)
-- Override approval limit specifically for this entity
-- Override daily limits specifically for this entity
-
-### Integration with Schema Builder
-
-Because modules and entities are database records, the role matrix is always in sync. When a new module is created, it automatically appears in the role permission matrix with all toggles defaulting to **OFF** — forcing the admin to explicitly grant access rather than accidentally opening it up.
-
-```
-Admin creates "Commodity" module in Schema Builder
-       ↓
-New row per role in role_module_access — all toggles = false
-       ↓
-ManageRoles page shows Commodity column for each role
-       ↓
-Admin configures which roles get access and sets limits
-       ↓
-Enforced immediately. No deploy.
-```
-
-### Planned Implementation Tasks
-
-```
-Phase 1 — Database Layer
-  [ ] Migration: role_configurations
-        role_id, is_active, description, color, max_users, dashboard_widgets JSON
-  [ ] Migration: role_module_access
-        role_id, module_id
-        action toggles: can_view, can_create, can_edit, can_delete, can_export,
-                        can_import, can_print, can_approve, can_reject, can_bulk_action
-        numeric limits: approval_limit, discount_limit_pct, max_order_value,
-                        daily_create_limit, daily_delete_limit, credit_limit,
-                        max_items_per_order, approval_escalation_hours
-        scope flags:    own_records_only, branch_records_only,
-                        requires_approval, requires_second_approval
-  [ ] Migration: role_entity_access
-        role_id, entity_id
-        same action toggles + hidden_fields JSON + readonly_fields JSON
-        entity-level limit overrides
-  [ ] Model: RoleConfiguration
-  [ ] Model: RoleModuleAccess
-  [ ] Model: RoleEntityAccess
-
-Phase 2 — Service Layer
-  [ ] RolePermissionService::canDo(user, action, module) → bool
-  [ ] RolePermissionService::getLimit(user, limitType, module) → float|null
-  [ ] RolePermissionService::isWithinLimit(user, limitType, value, module) → bool
-  [ ] RolePermissionService::getHiddenFields(user, entity) → array
-  [ ] RolePermissionService::getReadonlyFields(user, entity) → array
-  [ ] Cache role config per user session (invalidate on role change)
-
-Phase 3 — Filament UI (ManageRoles page)
-  [ ] Left panel: role list with color badge, active toggle, user count
-  [ ] Create / edit / clone / deactivate role
-  [ ] Right panel: tabbed by module
-  [ ] Each module tab: action toggle matrix + numeric limit inputs
-  [ ] Entity overrides: collapsible sub-section per entity
-  [ ] Field visibility: multi-select for hidden + readonly fields
-  [ ] Role comparison view: two roles side by side
-
-Phase 4 — Runtime Enforcement
-  [ ] Middleware: block nav access to modules the role cannot view
-  [ ] DynamicRecordResource: hide form fields per role hidden_fields
-  [ ] DynamicRecordResource: make fields readonly per role readonly_fields
-  [ ] DynamicRecordResource: show/hide action buttons per role toggles
-  [ ] Intercept saves when requires_approval = true → route to approval queue
-  [ ] Reject creates/edits when daily limits exceeded
-  [ ] Reject values exceeding numeric thresholds (max_order_value, discount_limit)
-
-Phase 5 — Audit & Reporting
-  [ ] Log every permission denial (who, what, when, why)
-  [ ] Role activity report: create/edit/approve counts per role per day
-  [ ] Permission change audit: who changed which role config and when
-  [ ] Limit breach attempts report: how often users hit their limits
-```
-
----
-
-## Feature: Notification Management System
-
-### Vision
-
-Every business needs to know when something important happens. But every business uses different channels. A Bangladesh FMCG company relies on WhatsApp. A European SaaS uses email. A local retail chain uses SMS. A tech-forward business uses Telegram bots.
-
-Orchestra's notification system lets the admin **visually configure which channels exist, how they're connected, which events trigger notifications, who receives them, and from which module** — all without touching code.
-
-The notification system has four layers:
-1. **Channels** — how messages are delivered (Email, SMS, WhatsApp, Telegram, Webhook)
-2. **Templates** — what each notification says, with `{variable}` substitution
-3. **Rules** — which events trigger which template on which channel
-4. **Recipients** — who gets notified (by role, by user, or from the record itself)
-
-### Supported Channels
-
-| Channel | Provider Options | Best For |
-|---|---|---|
-| **Email** | SMTP, Mailgun, SES, Postmark, Resend | Invoices, reports, formal alerts |
-| **SMS** | Twilio, Vonage, BulkSMS, local BD gateways | Delivery alerts, OTPs, urgent notices |
-| **WhatsApp** | WATI, Meta Business API, Twilio WhatsApp | Customer order updates, payment receipts |
-| **Telegram** | Telegram Bot API | Internal team alerts, approval requests |
-| **In-App** | Filament Notifications (built-in) | Admin panel alerts, action-required notices |
-| **Webhook** | Any HTTP endpoint | Slack, Discord, custom integrations |
-| **Push** | FCM / APNS | Mobile app (future) |
-
-### What the Admin Configures
-
-**Step 1 — Channel Setup**
-```
-Settings → Notifications → Channels → Add Channel
-
-Channel: WhatsApp via WATI
-  API Endpoint:  https://live-mt-server.wati.io/api/
-  API Token:     ••••••••••••••••
-  From Number:   +880XXXXXXXXXX
-  Status:        Active ✅
-  [Send Test Message]
-```
-
-**Step 2 — Subscribable Events per Module**
-```
-Purchasing:
-  Purchase Order Created / Approved / Sent to Supplier
-  GRN Created / Rejected
-  Supplier Payment Made
-  Invoice Overdue
-
-Sales:
-  New Order Created / Approved / Rejected
-  Order Shipped / Delivered
-  Payment Received / Overdue
-  Customer Credit Limit Approaching (80%)
-  Customer Credit Limit Exceeded
-
-Inventory:
-  Stock Below Reorder Point
-  Stock Out
-  Batch Expiring (30 days)
-
-HR:
-  Leave Request Submitted / Approved / Rejected
-  Attendance Anomaly
-
-System:
-  New User Created
-  Login from New Device
-  Role Changed
-  Permission Denied (audit)
-  Daily EOD Summary
-```
-
-**Step 3 — Notification Rules**
-The admin maps Event → Channel → Template → Recipient:
-
-```
-Event: Order Shipped
-  ├── WhatsApp → Customer (from order.customer.phone)
-  │     "Dear {customer_name}, your order {order_number} has been
-  │      shipped. Expected delivery: {delivery_date}."
-  │     Active: ✅
-  │
-  ├── Telegram → Role: Logistics Manager, Accounts
-  │     "🚚 Order {order_number} shipped by {shipped_by}.
-  │      Customer: {customer_name}. Value: {order_total}."
-  │     Active: ✅
-  │
-  └── Email → Customer (from order.customer.email)
-        CC: Role: Sales Manager
-        Active: ❌ (customer prefers WhatsApp)
-
-Event: Payment Overdue > 7 days
-  ├── WhatsApp → Customer
-  │     "Hi {customer_name}, invoice {invoice_number} for {amount}
-  │      was due on {due_date}. Please arrange payment."
-  │     Frequency: Daily until paid
-  │     Active: ✅
-  │
-  └── In-App → Role: Accounts, Sales Manager
-        "⚠️ {customer_name} is {days_overdue} days overdue for {amount}."
-        Active: ✅
-```
-
-**Step 4 — Recipient Options**
-```
-Who receives this notification?
-
-○ Specific Users       → pick from user list
-○ Role-based           → all users with selected role(s)
-○ Record Owner         → the user who created the triggering record
-○ Assigned User        → user assigned to the record (e.g. sales rep)
-○ Record Relationship  → a phone/email field FROM the record itself
-                         (e.g. Customer's phone for order events)
-○ Branch Manager       → manager of the branch the record belongs to
-○ Webhook URL          → POST payload to external system
-```
-
-**Step 5 — Frequency & Conditions**
-- Send once vs. repeat (e.g. daily reminder until resolved)
-- Condition filters (e.g. only notify if `order.total > $1,000`)
-- Quiet hours (don't send WhatsApp between 10pm–8am)
-- Batch digest (group 10 low-stock alerts into one message)
-- Escalation (if not acknowledged in N hours, notify next role up)
-
-### Template Editor Features
-- Subject line (email only)
-- Message body with `{variable}` placeholders that auto-complete from the event's available fields
-- Rich text / HTML for email (with logo and branding)
-- Plain text with character counter for SMS/WhatsApp
-- Preview with dummy data before saving
-- Send test button (fires to admin's own contact)
-
-### Integration with Schema Builder
-
-Because modules are dynamic, the event registry is also dynamic. When the admin creates a new entity, default events are auto-generated:
-
-```
-Admin creates Entity "Shipment" in Module "Commodity"
-       ↓
-System auto-generates events:
-  commodity.shipment.created
-  commodity.shipment.updated
-  commodity.shipment.status_changed
-  commodity.shipment.deleted
-       ↓
-These events appear in Notification Rules configurator immediately
-       ↓
-Admin sets up alerts for shipment events with no code written
-```
-
-### Real-World Example: Bangladesh Distributor
-
-```
-Channels active: WhatsApp (WATI), SMS (BulkSMS), Telegram, In-App
-
-Rule 1: New credit order created
-  → Telegram: Sales Director + Branch Manager
-
-Rule 2: Order approved
-  → WhatsApp: Customer "Your order is confirmed"
-
-Rule 3: Order shipped
-  → WhatsApp: Customer with delivery ETA
-  → SMS: Customer (fallback if WhatsApp undelivered)
-  → Telegram: Accounts team with order value
-
-Rule 4: Payment received
-  → WhatsApp: Receipt to customer
-  → Telegram: Accounts + Sales Manager
-
-Rule 5: Stock below reorder point
-  → Telegram: Purchasing Manager (immediate)
-  → In-App: Dashboard alert
-
-Rule 6: EOD Summary (daily 11:59pm)
-  → Telegram: Directors
-    "Branch A: Sales 12 | Collections ৳450,000 | Expenses ৳12,000"
-```
-
-### Planned Implementation Tasks
-
-```
-Phase 1 — Database Layer
-  [ ] Migration: notification_channels
-        type (email|sms|whatsapp|telegram|inapp|webhook)
-        name, config JSON (credentials, endpoints), is_active, last_tested_at
-  [ ] Migration: notification_templates
-        channel_id, event_key, subject, body, variables JSON, is_active
-  [ ] Migration: notification_rules
-        event_key, module_id, channel_id, template_id
-        recipient_type, recipient_config JSON
-        conditions JSON, frequency, quiet_hours JSON, is_active
-  [ ] Migration: notification_logs
-        rule_id, recipient, channel, payload JSON, status, sent_at, error_message
-  [ ] Models: NotificationChannel, NotificationTemplate, NotificationRule, NotificationLog
-
-Phase 2 — Channel Drivers
-  [ ] Interface: NotificationChannelDriver (send, test, getStatus)
-  [ ] EmailDriver (Laravel Mail — SMTP / Mailgun / SES / Resend)
-  [ ] SmsDriver (configurable gateway — Twilio / BulkSMS / local)
-  [ ] WhatsAppDriver (WATI / Meta Business API / Twilio)
-  [ ] TelegramDriver (Telegram Bot API)
-  [ ] InAppDriver (Filament Notifications)
-  [ ] WebhookDriver (HTTP POST with configurable payload)
-  [ ] DriverFactory: resolves correct driver from channel type + config
-
-Phase 3 — Event System
-  [ ] EventRegistry: list of all subscribable events, auto-built from active modules
-  [ ] Each event carries a typed payload (the triggering record + metadata)
-  [ ] New entity creation auto-generates default CRUD events
-  [ ] NotificationDispatcher: listens on Laravel events, evaluates rules,
-      resolves recipients, renders template variables, dispatches via driver
-  [ ] Queue-based delivery (never block user-facing requests)
-
-Phase 4 — Filament UI
-  [ ] Settings → Notifications → Channels
-        Card per channel type; configure credentials; test connection; toggle
-  [ ] Settings → Notifications → Templates
-        Select event + channel; write body with variable autocomplete; preview; test send
-  [ ] Settings → Notifications → Rules
-        Matrix: Event rows × Channel columns
-        Toggle = rule active; click = configure recipients + conditions + frequency
-  [ ] Settings → Notifications → Logs
-        Every notification sent: when, to whom, channel, status, error
-        Retry failed; filter by module/channel/date
-
-Phase 5 — Advanced Features
-  [ ] Quiet hours enforcement per channel per rule
-  [ ] Batch digest: collect N alerts → send as one grouped message
-  [ ] Escalation chains: if not acknowledged → escalate to next role
-  [ ] User notification preferences: opt-out of specific event types
-  [ ] Two-way Telegram: bot accepts /approve and /details commands
-  [ ] WhatsApp template pre-registration flow (Meta approval requirement)
-  [ ] SMS fallback: auto-retry via SMS if WhatsApp delivery fails
-  [ ] Notification analytics: delivery rate, open rate, response time
-```
-
----
-
-## Real-World Example: TechMart Electronics
-
-### Day 1 — Setup
-```
-Create Modules: Products, Inventory, Suppliers, Sales, Purchasing
-Create Entities + Fields → DB tables auto-created
-Define Relationships → Sidebar populates automatically
-Configure Roles: CEO, Sales Manager, Sales Rep, Warehouse Staff, Accountant
-Set up Channels: WhatsApp (WATI), Telegram, Email (Mailgun)
-```
-
-### Day 3 — First Purchase Order
-```
-Purchasing → Purchase Orders → Create
-  Items: iPhone 16 Pro 128GB × 100 @ $720 = $72,000
-  Status: Draft → Sent
-
-[Telegram fires to Purchasing Director]
-"📦 PO-00001 sent to Apple Distributor for $72,000 by [user]"
-
-[Stock arrives → Status: Received]
-→ Inventory updated, GRN created, ledger entry recorded
-[WhatsApp fires to Supplier]
-"Payment of $72,000 processed. Reference: SP-00001"
-```
-
----
-
-## Inspired By
-
-The schema for Orchestra was informed by a real-world Bangladesh flour mill distribution ERP with:
-- Multi-branch operations with branch-specific pricing
-- Credit order workflow with 11 status stages
-- Customer credit limits with payment allocation system
-- Weight-based product variants (grade + bag size + UOM)
-- Fleet management with trip consolidation AI
-- EOD cash verification per branch
-- Dynamic pricing rules engine
-- Bank account reconciliation
-- Petty cash management per branch
-
-All of these patterns are expressible through Orchestra's Schema Builder — making Orchestra capable of running a flour mill, a retail chain, a SaaS business, an electronics distributor, or a construction firm without changing a line of application code.
-
----
-
-## Key Technical Decisions
-
-**Why eval() for model creation?**
-Eloquent requires models to be instantiatable with zero arguments for event dispatching. Anonymous PHP classes cannot satisfy this. Named classes via `eval()` behave identically to handwritten models.
-
-**Why no statePath('data') in Field Options?**
-Filament 5's statePath puts all state under `$this->data[...]`. Since `visible()` closures and `save()` both need to read `selectedEntityId` directly, keeping state on public properties is cleaner and more reliable.
-
-**Why Cache::remember() not Cache::tags()?**
-`Cache::tags()` requires Redis. Simple keyed cache works with any driver and upgrades to tagged Redis automatically when the driver changes.
-
-**Why is_active on Relationships?**
-Hard-deleting removes institutional knowledge. Soft-disabling preserves the relationship definition while letting the admin control what's active per client deployment.
-
-**Why database-driven permissions not just Spatie strings?**
-Spatie strings (`view_product`) are boolean. A Sales Manager approving orders up to $10,000 and a CEO with unlimited approval are both "can_approve" — that single boolean hides a critical business rule. Numeric limits in `role_module_access` make thresholds queryable, auditable, and configurable without code changes.
-
-**Why a driver pattern for notifications?**
-Different clients use different channels. Hardcoding email sends couples business logic to one delivery method. A driver pattern means the dispatcher calls `$driver->send($recipient, $message)` regardless of channel. Adding a new gateway means adding one driver class — not rewriting notification logic.
-
----
-
-## Current State (April 2026)
-
-### Completed ✅
-- Laravel 13 + Filament 5 + Livewire 4 bootstrapped
-- Filament Shield v4.2 + Spatie Permission installed
-- nwidart/laravel-modules v11 with wikimedia/composer-merge-plugin
-- Core meta-tables: `modules`, `entities`, `fields`, `relationships`
-- `DynamicModelGenerator`, `DynamicMigrationService`, `SchemaCache`
-- `ManageFieldOptions` — visual field editor that creates DB columns on save
-- `DynamicRecordResource` — one resource serving all entities dynamically
-- `AppServiceProvider` — auto-builds sidebar nav from DB
-- Schema Builder: Modules, Entities, Fields, Relationships (with is_active toggle)
-- 4 Modules, 7 Entities, 31+ Fields, 6 Relationships in DB
-- Dynamic tables created: brands, categories, products, product_variants, suppliers, warehouses
-- `BulkPriceUpdate` standalone page
-
-### In Progress 🔄
-- Purchasing module field entry (GRN, Purchase Invoice, Supplier Payment)
-- Sales module field entry (Customer Payment, Allocation, Ledger)
-- Remaining module definitions (Banking, Fleet, Branches, Accounting)
-
-### Planned 📋
-- Role & Permission Management System (full plan above)
-- Notification Management System (full plan above)
-- InventoryService (reserve, release, transfer, immutable ledger)
-- Customer credit limit enforcement + payment allocation engine
-- Fleet trip planning + driver assignment
-- EOD reconciliation workflow
-- Pricing rules engine
-- REST API (Laravel Sanctum)
-- Customer-facing portal (Livewire, separate auth guard)
-- Configurable dashboard KPI widgets per role
-- Report engine with Excel/PDF export
-
----
-
-## Running Locally
+### 1. Clone the Repository
 
 ```bash
-git clone <repo-url> orchestra && cd orchestra
-composer install && npm install
-cp .env.example .env && php artisan key:generate
-# configure DB in .env
+git clone https://github.com/your-org/orchestra.git
+cd orchestra
+```
+
+### 2. Install PHP Dependencies
+
+```bash
+composer install
+```
+
+### 3. Install Node Dependencies & Build Assets
+
+```bash
+npm install
+npm run build
+```
+
+### 4. Environment Setup
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+Edit `.env` and configure:
+
+```dotenv
+APP_NAME="Orchestra ERP"
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=orchestra_erp
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Mail (for notifications)
+MAIL_MAILER=smtp
+MAIL_HOST=your-smtp-host
+MAIL_PORT=587
+MAIL_USERNAME=your-email
+MAIL_PASSWORD=your-password
+MAIL_FROM_ADDRESS=noreply@yourcompany.com
+
+# Queue (use 'database' for simple setups, 'redis' for production)
+QUEUE_CONNECTION=database
+
+# Google Drive Backup (optional)
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REFRESH_TOKEN=
+GOOGLE_DRIVE_FOLDER_ID=
+```
+
+### 5. Database Setup
+
+```bash
+# Create the MySQL database first, then run:
 php artisan migrate
-php artisan make:filament-user
+php artisan db:seed
+```
+
+### 6. Create a Super Admin User
+
+```bash
+php artisan shield:super-admin
+# Follow the prompts
+```
+
+Or via Tinker:
+
+```bash
+php artisan tinker
+>>> \App\Models\User::create([
+...   'name' => 'Admin',
+...   'email' => 'admin@admin.com',
+...   'password' => bcrypt('password')
+... ])->assignRole('super_admin');
+```
+
+### 7. Generate Shield Permissions
+
+```bash
+php artisan shield:generate --all
+```
+
+This creates all Filament Shield permissions for every Resource and Page in the system.
+
+### 8. Start the Development Server
+
+```bash
+# Laravel dev server
 php artisan serve
-# in another terminal:
+
+# In a separate terminal — Vite hot reload
 npm run dev
 ```
 
-Visit `http://127.0.0.1:8000/admin`
+Visit: `http://localhost:8000/admin`
+
+### 9. Queue Worker (for Backups & Notifications)
+
+```bash
+php artisan queue:work
+```
+
+### 10. Scheduler (for Automated Backups)
+
+Add to your server crontab:
+
+```
+* * * * * cd /path/to/orchestra && php artisan schedule:run >> /dev/null 2>&1
+```
 
 ---
 
-## Verified Package Versions (April 2026)
+## System Architecture
 
-| Package | Version |
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                       Filament 5 Admin Panel                      │
+│                                                                    │
+│  ┌───────────────┐  ┌────────────────┐  ┌─────────────────────┐  │
+│  │ Static         │  │ Dynamic         │  │ Schema Builder       │  │
+│  │ Resources      │  │ Records         │  │ Resources            │  │
+│  │ (Sales,        │  │ (any table      │  │ (Module, Entity,     │  │
+│  │  Purchasing,   │  │  defined in DB) │  │  Field, Relationship)│  │
+│  │  Products)     │  │                 │  │                      │  │
+│  └──────┬─────────┘  └──────┬──────────┘  └──────────┬──────────┘  │
+└─────────┼───────────────────┼────────────────────────┼─────────────┘
+          │                   │                         │
+          ▼                   ▼                         ▼
+ ┌────────────────┐  ┌──────────────────────┐  ┌───────────────────┐
+ │ Static Models  │  │ DynamicRecordResource │  │ DynamicMigration  │
+ │ (Eloquent ORM) │  │  getModel() → eval() │  │ Service           │
+ │                │  │  makeField()          │  │ Schema::table()   │
+ │                │  │  makeTableColumn()    │  │                   │
+ │                │  │  Smart FK mapping     │  │ DynamicModel      │
+ │                │  │                       │  │ Generator         │
+ └────────┬───────┘  └──────────┬────────────┘  └────────┬──────────┘
+          │                     │                         │
+          └─────────────────────┴─────────────────────────┘
+                                        │
+                                        ▼
+                               ┌─────────────────┐
+                               │     MySQL        │
+                               │ Static tables +  │
+                               │ Dynamic tables   │
+                               │ (created on field│
+                               │  save — no CLI)  │
+                               └─────────────────┘
+```
+
+**Core Services:**
+
+| Service | Responsibility |
 |---|---|
-| laravel/laravel | ^13.0 |
-| filament/filament | ^5.0 (v5.4.x) |
-| livewire/livewire | ^4.2 |
-| bezhansalleh/filament-shield | ^4.2 |
-| nwidart/laravel-modules | ^11.1 |
-| spatie/laravel-permission | ^6.10 |
-| spatie/laravel-medialibrary | ^11.21 |
-| spatie/laravel-activitylog | ^5.0 |
-| predis/predis | ^2.3 |
-
-> ⚠️ `filament-shield` v5 does not exist — always use `^4.2`
-> ⚠️ `activitylog` v5 has no `Traits/` folder — do not use `LogsActivity` directly
-> ⚠️ Filament 5: navigation group icon + item icons cannot coexist
-> ⚠️ Filament 5: `$view` on Pages is non-static
-> ⚠️ Filament 5: use `Filament\Schemas\Schema` and `Filament\Schemas\Components\Grid`
+| `RolePermissionService` | 3-dimensional RBAC: boolean actions + numeric limits + field-level visibility |
+| `CreditOrderWorkflowService` | Order state machine: 11 states, approval/escalation paths |
+| `ReportQueryBuilderService` | Dynamic SQL builder for custom reports with Excel export |
+| `CustomerPaymentService` | Payment allocation and customer ledger management |
+| `ProcurementService` | Purchase order lifecycle and GRN receipt matching |
+| `NotificationDispatcher` | Event-to-channel routing for all domain events |
+| `GoogleDriveService` | Backup upload, file retention, and auto-pruning |
+| `DatabaseMaintenanceService` | SQL statement parsing, classification, and safe execution |
+| `SchemaCache` | 5-minute TTL cache for entity/field schema reads |
+| `DashboardWidgetService` | Role-aware widget visibility configuration |
 
 ---
 
-## The Bigger Picture
+## Modules Overview
 
-Three pillars. One system. Zero hardcoding.
+### Sales Module
+
+> Navigation group: **Sales**
+
+| Resource | Purpose | Key Features |
+|---|---|---|
+| **Customers** | Customer master data | Credit limit, balance tracking, ledger entries, photo |
+| **Credit Orders** | Order management | 11-state workflow, approval/escalation, priority levels |
+| **Customer Payments** | Payment collection | Multi-method, bank account selection, ledger posting |
+
+**Credit Order Workflow:**
 
 ```
-SCHEMA AS DATA          PERMISSIONS AS DATA         NOTIFICATIONS AS DATA
-──────────────          ───────────────────         ─────────────────────
-Entities → Tables       Roles → Module Access        Events → Channels
-Fields → Columns        Limits → Numeric Rules       Templates → Messages
-Relations → Toggles     Scopes → Restrictions        Rules → Recipients
-Dynamic Forms           Runtime Enforcement           Driver Pattern
-Dynamic Nav             Audit Trail                  Delivery Logs
+          ┌─────────┐
+          │  draft  │
+          └────┬────┘
+               │ submit
+               ▼
+     ┌──────────────────┐
+     │ pending_approval │
+     └────────┬─────────┘
+              │                     ┌────────────┐
+              │ escalate            │  escalated │
+              ├─────────────────────►            │
+              │                     └─────┬──────┘
+              │ approve                   │ approve
+              ▼                           ▼
+          ┌──────────┐          ┌──────────────────┐
+          │ approved │◄─────────│                  │
+          └────┬─────┘          └──────────────────┘
+               │
+               ▼
+        ┌──────────────┐    ┌────────────────┐    ┌─────────┐    ┌───────────┐
+        │ in_production│───►│ ready_to_ship  │───►│ shipped │───►│ delivered │
+        └──────────────┘    └────────────────┘    └─────────┘    └───────────┘
+               │                    │                  │               │
+               └────────────────────┴──────────────────┴───────────────┘
+                                         │ cancel (from any state)
+                                         ▼
+                                    ┌───────────┐
+                                    │ cancelled │
+                                    └───────────┘
 ```
 
-The goal is a system where a non-technical business owner can:
-- Add a new module on Monday morning → visible in the sidebar by afternoon
-- Configure which roles access it by Tuesday
-- Set up notification rules for it by Wednesday
-
-No developer involved at any point. That is the Orchestra vision: **an ERP that conducts itself**.
+**Print Documents:**
+- Credit order invoice (A4, company-branded, customizable template)
+- Customer account statement (date-range filtered ledger)
+- Payment receipt
 
 ---
 
-## Author
+### Purchasing Module
 
-**Dhrobe Islam**
-Building Orchestra as a universal ERP platform for businesses of any type and size.
+> Navigation group: **Purchasing**
 
-*Stack: Laravel · Filament · Livewire · PHP · MySQL · macOS*
+| Resource | Purpose | Key Features |
+|---|---|---|
+| **Suppliers** | Supplier master data | Payment terms, credit limit, supplier ledger |
+| **Purchase Orders** | PO management | Approval workflow, payment basis, credit days |
+| **Goods Received Notes** | Inventory receipt | Qty received/accepted/rejected, weight variance |
+| **Purchase Payments** | Supplier payments | Allocation against purchase orders |
+
+**Weight Variance Tracking on GRNs:**
+
+GRNs track three quantities: `ordered_quantity`, `received_quantity`, and `accepted_quantity`. Discrepancies are classified (shortage, excess, damage) and stored with remarks for audit.
 
 ---
 
-> *"Most software forces your business to fit the software. Orchestra fits the software to your business."*
+### Products Module
+
+> Navigation group: **Products**
+
+| Resource | Purpose | Key Features |
+|---|---|---|
+| **Products** | Product master | Name, SKU, unit, category, description, image |
+| **Product Variants** | SKU variants per product | Weight (kg), grade, branch, active price, stock, price history |
+| **Bulk Price Update** | Mass pricing tool | Manual and formula-based pricing modes |
+
+**Price History:** Every price change via Bulk Price Update is logged to `product_prices` with effective date and variant/branch context.
+
+---
+
+### Dynamic Module System
+
+This is the architectural core of Orchestra. Any new ERP module — with its own database tables, list views, and create/edit forms — is built entirely through the admin UI with zero developer intervention.
+
+**Built-in dynamic modules (pre-configured):**
+
+| Module | Entities | Notes |
+|---|---|---|
+| **Expenses** | Expense Categories, Expense Subcategories, Bank Accounts, Expense Vouchers | Auto voucher numbers, payment method conditional display, print action |
+
+See the [Dynamic Module Builder — Visual Guide](#dynamic-module-builder--visual-guide) for step-by-step instructions.
+
+---
+
+### Reports Module
+
+> Navigation group: **Reports**
+
+| Feature | Description |
+|---|---|
+| **Report Builder** | Define reports: data source, columns, filters, sort, group |
+| **Run Report** | Execute any saved report with interactive filter form and pagination |
+| **Excel Export** | One-click `.xlsx` download of full result set |
+
+**Supported Data Sources:**
+
+| Source | Joins Available |
+|---|---|
+| Credit Orders | Customers |
+| Customers | — |
+| Customer Payments | Customers |
+| Suppliers | — |
+| Purchase Orders | Suppliers |
+
+---
+
+### Settings & Configuration
+
+| Page | Purpose |
+|---|---|
+| **Company Settings** | Name, tagline, address, logo, tax ID, website |
+| **Landing Page Settings** | Public landing page URL and branding customization |
+| **Dashboard Settings** | Enable/disable widgets per role |
+| **Invoice Templates** | PDF layout, colors, branding, watermark (20+ options) |
+| **Backup Settings** | Schedule, Google Drive credentials, retention policy |
+| **Database Maintenance** | Safe SQL execution with statement preview and classification |
+| **User Management** | Admin users and role assignment |
+| **Roles (Shield)** | Role/permission management via Filament Shield |
+
+---
+
+## Dynamic Module Builder — Visual Guide
+
+The schema builder lives under the **Schema Builder** navigation group. It has four resources: **Modules**, **Entities**, **Fields**, and **Relationships**.
+
+---
+
+### Step 1: Create a Module
+
+> **Schema Builder → Modules → New Module**
+
+A Module becomes a navigation group in the admin sidebar and a logical container for related entities.
+
+```
+┌──────────────────────────────────────┐
+│  New Module                          │
+├──────────────────────────────────────┤
+│  Name       [ Inventory            ] │
+│  Slug       [ inventory            ] │  ← auto-generated, URL-safe
+│  Icon       [ heroicon-o-archive   ] │  ← any Heroicons name
+│  Is Active  [ ✓ ]                    │
+└──────────────────────────────────────┘
+                   ↓ Save
+  Sidebar now shows "Inventory" group
+```
+
+> The `icon` field accepts any Heroicons v2 name (e.g. `heroicon-o-truck`, `heroicon-o-cube`, `heroicon-o-banknotes`). Browse available icons at [heroicons.com](https://heroicons.com).
+
+---
+
+### Step 2: Define Entities
+
+> **Schema Builder → Entities → New Entity**
+
+An Entity becomes a database table and a menu item inside its parent module. It gets a full list view and create/edit form.
+
+```
+┌──────────────────────────────────────────┐
+│  New Entity                              │
+├──────────────────────────────────────────┤
+│  Module      [ Inventory           ▾ ]   │
+│  Name        [ Warehouse Items       ]   │
+│  Slug/Table  [ warehouse_items       ]   │  ← becomes the DB table name
+│  Title Field [ item_name             ]   │  ← used in dropdowns and breadcrumbs
+│  Is Active   [ ✓ ]                       │
+└──────────────────────────────────────────┘
+                     ↓ Save
+   DB table "warehouse_items" is created.
+   "Warehouse Items" appears in the Inventory nav group.
+```
+
+> **Title Field** should match the `name` of the field you want used as the record label in foreign key dropdowns and breadcrumb titles. Set this to the field that most uniquely identifies a record (e.g. `item_name`, `voucher_number`, `invoice_ref`).
+
+---
+
+### Step 3: Define Fields
+
+> **Schema Builder → Fields → New Field**
+
+Each Field adds one column to the entity's database table and one input to its create/edit form.
+
+```
+┌────────────────────────────────────────────────────────┐
+│  New Field                                             │
+├────────────────────────────────────────────────────────┤
+│  Entity         [ Warehouse Items         ▾ ]          │
+│  Field Name     [ item_name                 ]  DB col  │
+│  Label          [ Item Name                 ]  UI text │
+│  Type           [ text                    ▾ ]          │
+│  Is Required    [ ✓ ]                                  │
+│  Show in Table  [ ✓ ]       Editable  [ ✓ ]           │
+│  Sort Order     [ 1  ]                                 │
+│  Options        [                           ]  select  │
+│  Validation     [ required|max:255          ]          │
+└────────────────────────────────────────────────────────┘
+                      ↓ Save
+   Column "item_name VARCHAR(255)" added to warehouse_items.
+   Input appears in the Warehouse Items form immediately.
+```
+
+> **When you save a Field, the `DynamicMigrationService` immediately adds or modifies the column in the database table. No `php artisan migrate` command is needed.**
+
+**Reordering fields:** The `Sort Order` integer controls the position of inputs in the form (ascending) and columns in the table.
+
+**Hiding from table vs. form:** `Show in Table` controls the list view column. `Editable` controls whether the input appears in the form. A field can be form-only (Show in Table off) or table-only display.
+
+---
+
+### Step 4: Use the Module
+
+Once an Entity and its Fields are saved, navigate to the module in the admin sidebar. The URL follows the pattern:
+
+```
+/admin/dynamic/{table_slug}
+```
+
+For example: `warehouse_items` → `/admin/dynamic/warehouse_items`
+
+What you get automatically:
+
+```
+┌──────────────────────────────────────────────────┐
+│  Warehouse Items                    [+ New Item]  │
+├──────────┬──────────────┬──────────┬─────────────┤
+│ Item Name│ Category     │ Quantity │ Actions      │
+├──────────┼──────────────┼──────────┼─────────────┤
+│ Flour 50 │ Raw Material │ 240      │ Edit Delete  │
+│ Sugar 25 │ Raw Material │  80      │ Edit Delete  │
+└──────────┴──────────────┴──────────┴─────────────┘
+     ↑ All is_listed=true fields become sortable columns
+```
+
+The **Create** and **Edit** forms are built automatically from your field definitions, with:
+- Correct input types (text, number, date, select, toggle, etc.)
+- Server-side validation from your `validation_rules`
+- Foreign key dropdowns auto-resolved from `_id` suffixed fields
+- RBAC-aware hidden/readonly fields per role
+
+---
+
+### Field Types Reference
+
+| Type | DB Column Type | Filament Component | Use For |
+|---|---|---|---|
+| `text` | `VARCHAR(255)` | `TextInput` | Names, codes, short strings |
+| `textarea` | `TEXT` | `Textarea` | Descriptions, notes, remarks |
+| `number` | `DECIMAL(15,2)` | `TextInput` (numeric) | Prices, weights, amounts |
+| `integer` | `BIGINT` | `TextInput` (integer) | Quantities, counts, sort order |
+| `boolean` | `TINYINT(1)` | `Toggle` | Active flags, yes/no fields |
+| `date` | `DATE` | `DatePicker` | Dates without time |
+| `datetime` | `DATETIME` | `DateTimePicker` | Timestamps with time |
+| `select` | `VARCHAR(100)` | `Select` | Enumerated options |
+| `json` | `JSON` | `KeyValue` | Arbitrary key-value data |
+| `media` | `VARCHAR(255)` | `FileUpload` | Images, documents (stores path) |
+
+**Defining `select` Options:**
+
+Enter options in the `Options` textarea as `key:value` pairs, one per line:
+
+```
+pending:Pending
+processing:Processing
+completed:Completed
+cancelled:Cancelled
+```
+
+Or as a raw JSON object: `{"pending":"Pending","processing":"Processing"}`
+
+---
+
+### Smart Foreign Key Resolution
+
+Any field whose name ends in `_id` is automatically detected as a foreign key and rendered as a searchable `Select` dropdown instead of a plain text input.
+
+**Automatic resolution by stem pluralization:**
+
+| Field Name | Resolved Table | Displayed As |
+|---|---|---|
+| `product_id` | `products` | Product name |
+| `supplier_id` | `suppliers` | Supplier name |
+| `customer_id` | `customers` | Customer name |
+| `branch_id` | `branches` | Branch name |
+| `category_id` | `categories` | Category name |
+| `employee_id` | `employees` | Employee name |
+
+**Context-aware overrides (built-in for Expense entities):**
+
+| Entity Table | Field | Resolved Table | Why |
+|---|---|---|---|
+| `expense_subcategories` | `category_id` | `expense_categories` | Avoids generic `categories` table |
+| `expense_vouchers` | `category_id` | `expense_categories` | Same |
+| `expense_vouchers` | `subcategory_id` | `expense_subcategories` | Correct target table |
+| `expense_vouchers` | `bank_account_id` | `bank_accounts` | Correct target table |
+
+**Bank Account special formatting:**
+
+`bank_account_id` dropdowns show richly formatted options:
+```
+Sonali Bank — Operating Account (001-123-456)
+BRAC Bank — Payroll Account (012-987-654)
+```
+
+**Adding your own FK overrides:**
+
+In `app/Filament/Resources/DynamicRecords/DynamicRecordResource.php`, add entries to `$contextFkOverrides`:
+
+```php
+private static array $contextFkOverrides = [
+    // 'table_name.field_name' => 'target_table'
+    'your_entity.warehouse_id' => 'warehouses',
+    'your_entity.zone_id'      => 'delivery_zones',
+];
+```
+
+---
+
+### Special Entity Behaviours
+
+These behaviours are hardcoded for specific entities in `DynamicRecordResource`:
+
+| Entity / Field | Behaviour |
+|---|---|
+| `expense_vouchers` → `voucher_number` | Auto-generated as `EXP-{YEAR}-{NNNNN}` on create. Read-only in form. |
+| `expense_vouchers` → `payment_method` | `live()` — triggers Livewire re-render on change |
+| `expense_vouchers` → `bank_account_id` | Hidden unless `payment_method` is `bank_transfer` |
+| `expense_vouchers` → `subcategory_id` | Cascades from `category_id` — only shows subcategories belonging to selected category |
+| Any `expense_vouchers` row | Row action **Print Voucher** → opens `/print/expense-voucher/{id}` |
+
+---
+
+## Schema Builder Reference
+
+The four underlying database tables that power the dynamic system:
+
+### `modules` table
+```
+id          — primary key
+name        — display name (e.g. "Expenses")
+slug        — URL-safe identifier (e.g. "expenses")
+icon        — heroicon name (e.g. "heroicon-o-receipt-percent")
+is_active   — whether it appears in navigation
+created_at / updated_at
+```
+
+### `entities` table
+```
+id            — primary key
+module_id     — FK → modules
+name          — display name (e.g. "Expense Vouchers")
+slug          — becomes the actual DB table name (e.g. "expense_vouchers")
+title_field   — field name used as record label (e.g. "voucher_number")
+is_active
+deleted_at    — soft deletes
+created_at / updated_at
+```
+
+### `fields` table
+```
+id               — primary key
+entity_id        — FK → entities
+name             — DB column name (snake_case, e.g. "amount")
+label            — UI display label (e.g. "Amount (৳)")
+type             — one of: text, textarea, number, integer, boolean,
+                           date, datetime, select, json, media
+options          — JSON (for select type: {"key":"Label",...})
+validation_rules — pipe-separated Laravel rules (e.g. "required|numeric|min:0")
+is_required      — shortcut for required validation
+is_listed        — show as table column
+is_editable      — show in create/edit form
+sort_order       — position in form and table (ascending)
+deleted_at       — soft deletes
+created_at / updated_at
+```
+
+### `relationships` table
+```
+id                  — primary key
+source_entity_id    — FK → entities (the "owner" side)
+target_entity_id    — FK → entities (the "related" side)
+type                — hasMany | belongsTo | belongsToMany
+foreign_key         — the FK column name
+created_at / updated_at
+```
+
+---
+
+## RBAC System
+
+Orchestra uses a **three-dimensional** RBAC system built on Spatie Laravel Permission + Filament Shield + a custom `RolePermissionService`.
+
+### Dimension 1 — Boolean Actions
+
+Per role, per module or entity:
+
+| Permission | Controls |
+|---|---|
+| `can_view` | Access to list and view records |
+| `can_create` | New record creation |
+| `can_edit` | Editing existing records |
+| `can_delete` | Record deletion |
+| `can_bulk_action` | Bulk operations (delete, export) |
+
+### Dimension 2 — Numeric Limits
+
+Per role, per module:
+
+| Limit | Description |
+|---|---|
+| `approval_limit` | Maximum order/transaction value this role can approve |
+| `discount_limit_pct` | Maximum discount percentage this role can apply |
+
+### Dimension 3 — Field-Level Visibility
+
+Per role, per entity:
+
+| Setting | Description |
+|---|---|
+| `hidden_fields` | Array of field names completely hidden from this role |
+| `readonly_fields` | Array of field names shown but not editable by this role |
+| `own_records_only` | Role can only see records they personally created |
+
+### Resolution Order
+
+```
+Entity-level rule (highest priority)
+           ↓
+Module-level rule
+           ↓
+Default: deny
+           ↑
+Super Admin: bypass_all_restrictions = true (skips all checks)
+```
+
+### Super Admin
+
+Users with the `super_admin` role bypass all Filament authorization checks. This is enabled via Filament Shield's `define_via_gate = true` setting, which registers a `Gate::before()` callback at boot.
+
+Config: `config/filament-shield.php`
+
+```php
+'super_admin' => [
+    'enabled'         => true,
+    'name'            => 'super_admin',
+    'define_via_gate' => true,      // ← enables Gate::before bypass
+    'intercept_gate'  => 'before',
+],
+```
+
+### Staff Panel (`/app`)
+
+A second Filament panel at `/app` is available for staff users. Resources loaded in this panel use the `ChecksStaffPanel` trait, which automatically disables edit, delete, and bulk-delete actions — making it a read-only view for non-admin staff.
+
+---
+
+## Print & Document System
+
+### Available Print Views
+
+All print views are browser-printable A4 layouts with CSS `@media print` optimization.
+
+| Document | Route | Data Included |
+|---|---|---|
+| Credit Order Invoice | `GET /print/credit-order-invoice/{id}` | Order, customer, line items, totals, payment status |
+| Customer Statement | `GET /print/customer-statement/{customerId}` | Ledger entries, running balance, date range |
+| Payment Receipt | `GET /print/payment-receipt/{id}` | Payment details, customer, reference |
+| Expense Voucher | `GET /print/expense-voucher/{id}` | Voucher number, amount, category, subcategory, payment method, bank details, signature row |
+
+All routes are registered in `routes/web.php` pointing to `PrintController`.
+
+### Invoice Template System
+
+`InvoiceTemplate` records store a `config` JSON with layout/branding options per document type. Each document type can have one default template.
+
+Key template options:
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `paper_size` | string | `A4` | Paper format |
+| `orientation` | string | `portrait` | portrait / landscape |
+| `header_bg` | hex | `#1e293b` | Header background color |
+| `accent_color` | hex | `#f59e0b` | Accent / highlight color |
+| `show_logo` | bool | `true` | Display company logo in header |
+| `show_page_numbers` | bool | `false` | Footer page numbers |
+| `watermark_text` | string | — | Diagonal background watermark |
+| `footer_text` | string | — | Custom footer line |
+
+Templates generate CSS variables via `toCssVars()`, injected into the print view's `<style>` block.
+
+---
+
+## Backup System
+
+> **Admin panel → Settings → Backup Settings**
+
+### How It Works
+
+1. A scheduled `DatabaseBackupJob` fires on your configured schedule
+2. It generates a full MySQL dump via PHP PDO
+3. The dump is zipped as `orchestra_backup_{timestamp}.zip`
+4. The zip is uploaded to your Google Drive folder
+5. Files older than `retention_days` are automatically deleted from Drive
+6. The result (success/failure, filename, size) is stored in `backup_configurations`
+
+### Configuration
+
+| Setting | Description |
+|---|---|
+| **Schedule** | `hourly`, `daily`, or `weekly` |
+| **Retention Days** | Backups older than N days are auto-deleted |
+| **Drive Folder ID** | ID from your Google Drive folder URL |
+| **Google Credentials** | Paste your service account JSON |
+
+### Manual Trigger
+
+```bash
+php artisan backup:run
+```
+
+---
+
+## Notification System
+
+> **Admin panel → Settings → Notification Channels**
+> **Admin panel → Settings → Notification Event Rules**
+
+### Channels
+
+Define where notifications are delivered:
+
+| Type | Configuration |
+|---|---|
+| Email | Recipient email address |
+| SMS | API endpoint + phone number |
+| Webhook | URL + optional custom headers |
+
+### Event Rules
+
+Link domain events to delivery channels:
+
+| Example Event | When It Fires |
+|---|---|
+| `order.created` | New credit order placed |
+| `order.approved` | Order status changes to approved |
+| `order.shipped` | Order status changes to shipped |
+| `payment.received` | Customer payment recorded |
+| `grn.posted` | GRN verified and inventory posted |
+
+Create a rule: choose an event, select one or more channels, and save. The `NotificationDispatcher` service handles routing at runtime.
+
+---
+
+## Bulk Price Update
+
+> **Admin panel → Products → Bulk Price Update**
+
+A custom Filament page for mass-updating product variant prices. Select any product to see all its active variants in a table, then update prices individually or derive them all from a formula.
+
+### Manual Mode
+
+Each variant row shows:
+- Variant label (product + weight + grade + branch)
+- Price input (numeric, right-aligned with ৳ prefix)
+- Effective date picker
+
+Click **Save All Prices** to write all changes in a single transaction.
+
+### Formula Mode
+
+Configure parameters and click **Recalculate All** to derive every variant's price automatically:
+
+```
+price(variant) = round(
+                   (base_price ÷ base_weight) × variant_weight,
+                   weight_rounding
+                 ) + weight_premium
+
+Non-base branches:  + branch_premium
+```
+
+**Formula Parameters:**
+
+| Parameter | Description |
+|---|---|
+| **Base Branch** | The reference branch (lowest cost) |
+| **Base Weight** | Reference weight in kg (e.g. 50) |
+| **Base Price** | Price for base_weight at base_branch |
+| **Weight Rounding** | Round to nearest N BDT (e.g. 5 → nearest ৳5) |
+| **Weight Premium** | Fixed BDT added after proportional calculation |
+| **Branch Premium** | Fixed BDT added for all non-base branches |
+
+After recalculation, review the computed prices and click **Save All Prices** to persist them. Each saved change is logged to `product_prices` for history.
+
+---
+
+## Custom Report Builder
+
+> **Admin panel → Reports → Report Builder**
+
+### Creating a Report
+
+1. Go to **Reports → Report Builder → New Report**
+2. Enter a name and description
+3. Choose a **Data Source** (e.g. Credit Orders)
+4. Select which **Columns** to display from the available field list
+5. Add **Filters** (date ranges, status, dropdown fields)
+6. Optionally configure **Sort By** and **Group By**
+7. Save
+
+### Running a Report
+
+1. Open the saved report → click **Run Report**
+2. The filter form appears — fill in any date ranges, status selects, etc.
+3. Results display in a paginated table (50 rows/page)
+4. Click **Export to Excel** to download the full unfiltered or filtered dataset as `.xlsx`
+
+### Available Filter Types
+
+Filters are generated from the report definition and the data source's available fields:
+- **Date range** — from/to date pickers
+- **Status** — dropdown of available states
+- **Customer / Supplier** — searchable select
+- **Amount range** — min/max numeric inputs
+
+---
+
+## File Structure
+
+```
+app/
+├── Filament/
+│   ├── Concerns/
+│   │   └── ChecksStaffPanel.php         ← Trait: makes resources read-only in /app panel
+│   ├── Pages/                           ← 9 custom Filament pages
+│   │   ├── Dashboard.php
+│   │   ├── BulkPriceUpdate.php          ← Manual + formula pricing
+│   │   ├── CompanySettings.php
+│   │   ├── LandingPageSettings.php
+│   │   ├── ManageDashboardSettings.php
+│   │   ├── ManageFieldOptions.php
+│   │   ├── RunReportPage.php            ← Report execution + Excel export
+│   │   ├── BackupSettingsPage.php
+│   │   └── DatabaseMaintenancePage.php
+│   ├── Resources/
+│   │   ├── Products/
+│   │   │   ├── ProductResource.php
+│   │   │   └── ProductVariantResource.php
+│   │   ├── Sales/
+│   │   │   ├── CustomerResource.php
+│   │   │   ├── CreditOrderResource.php
+│   │   │   └── CustomerPaymentResource.php
+│   │   ├── Purchasing/
+│   │   │   ├── SupplierResource.php
+│   │   │   ├── PurchaseOrderResource.php
+│   │   │   ├── GoodsReceivedNoteResource.php
+│   │   │   └── PurchasePaymentResource.php
+│   │   ├── DynamicRecords/
+│   │   │   └── DynamicRecordResource.php   ← Core of the dynamic system
+│   │   │       Pages/
+│   │   │       ├── ListDynamicRecords.php
+│   │   │       ├── CreateDynamicRecord.php  ← Auto voucher number generation
+│   │   │       └── EditDynamicRecord.php
+│   │   ├── Modules/                     ← Schema Builder: Modules
+│   │   ├── Entities/                    ← Schema Builder: Entities
+│   │   ├── Fields/                      ← Schema Builder: Fields
+│   │   ├── Relationships/               ← Schema Builder: Relationships
+│   │   ├── Notifications/
+│   │   │   ├── NotificationChannelResource.php
+│   │   │   └── NotificationEventRuleResource.php
+│   │   ├── CustomReportResource.php     ← Report Builder
+│   │   ├── InvoiceTemplateResource.php
+│   │   └── UserResource.php
+│   └── Widgets/
+├── Http/Controllers/
+│   └── PrintController.php              ← All print document routes
+├── Jobs/
+│   └── DatabaseBackupJob.php
+├── Models/                              ← 41 models total
+├── Providers/Filament/
+│   ├── AdminPanelProvider.php           ← Main admin panel (/admin)
+│   └── AppPanelProvider.php             ← Staff read-only panel (/app)
+└── Services/
+    ├── DynamicMigrationService.php      ← Schema::table() on field save
+    ├── DynamicModelGenerator.php        ← eval() model class at runtime
+    ├── RolePermissionService.php        ← 3-dimensional RBAC engine
+    ├── CreditOrderWorkflowService.php   ← 11-state order state machine
+    ├── CustomerPaymentService.php       ← Payment allocation + ledger
+    ├── ProcurementService.php           ← PO lifecycle + GRN matching
+    ├── ReportQueryBuilderService.php    ← Dynamic SQL + Excel export
+    ├── NotificationDispatcher.php       ← Event-to-channel routing
+    ├── GoogleDriveService.php           ← Backup upload + pruning
+    ├── DatabaseMaintenanceService.php   ← SQL parser + safe execution
+    ├── DashboardWidgetService.php       ← Role-aware widget visibility
+    └── SchemaCache.php                  ← 5-min TTL entity/field cache
+
+database/
+└── migrations/                          ← 45 migrations
+
+resources/
+├── css/
+│   ├── app.css                          ← Tailwind v4 entry point
+│   └── filament/admin/theme.css         ← Filament custom theme
+│                                           (scans app/Filament + resources/views/filament)
+├── js/
+│   └── app.js
+└── views/
+    ├── filament/pages/
+    │   ├── bulk-price-update.blade.php  ← Alpine DOM collection, @assets CSS
+    │   ├── backup-settings.blade.php
+    │   ├── landing-page-settings.blade.php
+    │   └── run-report.blade.php
+    └── print/
+        ├── credit-order-invoice.blade.php
+        ├── customer-statement.blade.php
+        ├── payment-receipt.blade.php
+        └── expense-voucher.blade.php    ← Purple scheme, bank/cash layout
+
+config/
+└── filament-shield.php                  ← define_via_gate = true (super_admin bypass)
+```
+
+---
+
+## Changelog
+
+### April 2026
+
+#### Dynamic Module — Expense Module Enhancements
+- **FK dropdown preloading** — `expense_categories`, `expense_subcategories`, `bank_accounts` now use `->options()` callbacks with soft-delete awareness instead of raw search
+- **Cascading subcategory** — `expense_vouchers.subcategory_id` live-filters to only show subcategories of the selected `category_id`
+- **Auto voucher numbers** — `EXP-{YEAR}-{NNNNN}` auto-generated on create via `mutateFormDataBeforeCreate()`, read-only in form
+- **Conditional bank field** — `bank_account_id` field is hidden unless `payment_method = bank_transfer`
+- **Expense print action** — Print row action on every expense voucher row → `/print/expense-voucher/{id}`
+- **Expense voucher print view** — Professional A4 layout with amount hero, payment section (cash vs. bank), and signature row
+
+#### Dynamic Module — Core Fixes
+- **`normalizeOptions()` helper** — Fixes `SelectFilter` crash caused by double-encoded JSON in `fields.options` column; checks `is_array()` first, falls back to `json_decode()` if string
+- **Filament 5 namespace fix** — Corrected `use Filament\Forms\Get` → `use Filament\Schemas\Components\Utilities\Get` in `DynamicRecordResource`
+- **Context-aware FK overrides** — `$contextFkOverrides` map added to `DynamicRecordResource` for `expense_*` entities
+- **Suppliers duplicate module deleted** — Dynamic `Suppliers` module (id=30) removed from DB; it duplicated the static `SupplierResource`
+- **Suppliers SelectFilter fix** — Replaced `->relationship()` (removed in Filament 5) with `->options()` on all `SelectFilter` instances
+
+#### Products
+- **ProductVariant 404 fix** — Root cause: route collision between `products/{record}` wildcard and `products/product-variants`; fixed by adding explicit `protected static ?string $slug = 'product-variants'` to `ProductVariantResource`
+- **`$shouldSkipAuthorization = true`** — Added to `ProductVariantResource` to bypass Filament's policy-existence check (no `ProductVariantPolicy` exists; admin panel auth handled by middleware)
+- **Bulk Price Update CSS fix** — Wrapped `<style>` block in `@assets`/`@endassets` so styles survive Livewire DOM morphing across re-renders
+- **Price saving fix** — Replaced unreliable `wire:model.defer` on nested array inputs with Alpine DOM collection; `saveWithPrices(array $prices)` collects input values at click time from DOM
+- **Post-save refresh fix** — Added `$saveCounter` property incremented on each save; included in `wire:key="price-table-{{ $productId }}-{{ $saveCounter }}"` to force full Alpine re-initialization with fresh DB values
+
+#### Authorization
+- **Filament Shield config published** — `config/filament-shield.php` published and `define_via_gate` set to `true` to register `Gate::before()` for `super_admin` role bypass
+
+#### New Features Added
+- **Custom Report Builder** — `CustomReportResource`, `RunReportPage`, `ReportQueryBuilderService` with dynamic SQL and Excel export
+- **Invoice Template System** — `InvoiceTemplateResource` + `InvoiceTemplateSeeder` with 20+ layout/branding config options
+- **Backup System** — `BackupSettingsPage`, `DatabaseBackupJob`, `GoogleDriveService`, `BackupConfiguration` model
+- **Landing Page Settings** — `LandingPageSettings` page + `landing_page` column migration on `company_settings`
+- **Expense Voucher print view** — `resources/views/print/expense-voucher.blade.php`
+- **Payment fields on expense vouchers** — Migration `2026_04_13_000005_add_payment_fields_to_expense_vouchers.php`
+
+#### Frontend / Theme
+- **Filament custom theme generated** — `resources/css/filament/admin/theme.css` compiles all Tailwind classes from custom blade files
+- **Tailwind v4 compatible setup** — Uses `@source` directives instead of v3's `content[]` array in `tailwind.config.js`
+- **`viteTheme()` registered** — `AdminPanelProvider` loads `resources/css/filament/admin/theme.css` so all custom utility classes (e.g. `text-[10px]`, `bg-amber-900/30`, `tracking-widest`) are available
+
+---
+
+*Orchestra ERP — Built by Dhrobe Islam*
