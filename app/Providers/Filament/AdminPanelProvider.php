@@ -47,6 +47,9 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Products')
                     ->icon('heroicon-o-cube'),
 
+                NavigationGroup::make('Reports')
+                    ->icon('heroicon-o-chart-bar'),
+
                 NavigationGroup::make('Settings')      ->icon('heroicon-o-cog-6-tooth'),
 
                 NavigationGroup::make('Schema Builder')
@@ -88,6 +91,12 @@ class AdminPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
             ->routes(function () {
+                // Run Report page (accessed by report ID)
+                \Illuminate\Support\Facades\Route::get(
+                    'run-report',
+                    \App\Filament\Pages\RunReportPage::class
+                )->name('run-report');
+
                 \Illuminate\Support\Facades\Route::get(
                     'dynamic/{table}',
                     \App\Filament\Resources\DynamicRecords\Pages\ListDynamicRecords::class

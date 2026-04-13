@@ -161,9 +161,8 @@ class ProductVariantResource extends Resource
             ->filters([
                 SelectFilter::make('product_id')
                     ->label('Product')
-                    ->relationship('product', 'name')
-                    ->searchable()
-                    ->preload(),
+                    ->options(Product::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable(),
 
                 SelectFilter::make('branch_id')
                     ->label('Branch')

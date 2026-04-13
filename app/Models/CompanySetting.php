@@ -18,6 +18,11 @@ class CompanySetting extends Model
         'website',
         'tax_id',
         'logo',
+        'landing_page',
+    ];
+
+    protected $casts = [
+        'landing_page' => 'array',
     ];
 
     /**
@@ -37,5 +42,24 @@ class CompanySetting extends Model
     public function getLogoUrl(): ?string
     {
         return $this->logo ? asset('storage/' . $this->logo) : null;
+    }
+
+    /**
+     * Returns landing page settings with defaults merged in.
+     */
+    public function getLandingConfig(): array
+    {
+        $defaults = [
+            'hero_title'         => $this->company_name ?? 'Orchestra ERP',
+            'hero_subtitle'      => $this->tagline ?? 'Your complete business solution',
+            'show_staff_login'   => true,
+            'show_admin_login'   => true,
+            'staff_login_label'  => 'Staff Login',
+            'admin_login_label'  => 'Admin Login',
+            'hero_style'         => 'glassmorphic',
+            'nav_items'          => [],
+        ];
+
+        return array_merge($defaults, $this->landing_page ?? []);
     }
 }

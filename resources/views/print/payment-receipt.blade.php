@@ -5,56 +5,68 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Payment Receipt — {{ $payment->customer?->name }}</title>
 <style>
+  /* ── Template CSS variables ── */
+  :root {
+    --tpl-primary:   #065f46;
+    --tpl-accent:    #10b981;
+    --tpl-text:      #111827;
+    --tpl-border:    #e5e7eb;
+    --tpl-header-bg: #065f46;
+    --tpl-header-fg: #ffffff;
+    --tpl-font:      'Segoe UI', Arial, sans-serif;
+  }
+  @isset($tplCss) {!! $tplCss !!} @endisset
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #fff; }
+  body { font-family: var(--tpl-font); font-size: 12px; color: var(--tpl-text); background: #fff; }
   .page { max-width: 780px; margin: 0 auto; padding: 32px 36px; }
 
   /* Print bar */
-  .print-bar { background: #1e293b; color: #fff; padding: 10px 36px; display: flex; align-items: center; justify-content: space-between; }
-  .print-btn { background: #3b82f6; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .close-btn { background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .print-bar { background: var(--tpl-header-bg); color: var(--tpl-header-fg); padding: 10px 36px; display: flex; align-items: center; justify-content: space-between; }
+  .print-btn { background: var(--tpl-accent); color: #fff; border: none; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .close-btn { background: transparent; color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.3); padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
 
   /* Header */
-  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 3px solid #1e293b; margin-bottom: 22px; }
-  .brand-name { font-size: 22px; font-weight: 900; color: #0f172a; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 18px; border-bottom: 3px solid var(--tpl-header-bg); margin-bottom: 22px; }
+  .brand-name { font-size: 22px; font-weight: 900; color: var(--tpl-primary); }
   .brand-sub  { font-size: 11px; color: #94a3b8; margin-top: 2px; }
   .receipt-meta { text-align: right; }
-  .receipt-title { font-size: 20px; font-weight: 800; color: #059669; }
+  .receipt-title { font-size: 20px; font-weight: 800; color: var(--tpl-primary); }
   .receipt-num   { font-size: 13px; color: #374151; font-weight: 700; margin-top: 4px; }
   .receipt-date  { font-size: 11px; color: #6b7280; margin-top: 2px; }
 
   /* Amount hero */
-  .amount-hero { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 2px solid #6ee7b7; border-radius: 14px; padding: 22px 28px; text-align: center; margin-bottom: 22px; }
-  .amount-hero .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #059669; margin-bottom: 6px; }
-  .amount-hero .value { font-size: 38px; font-weight: 900; color: #065f46; line-height: 1; }
-  .amount-hero .method-badge { display: inline-block; margin-top: 10px; background: #065f46; color: #fff; padding: 4px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .amount-hero { background: linear-gradient(135deg, color-mix(in srgb, var(--tpl-primary) 8%, white), color-mix(in srgb, var(--tpl-accent) 12%, white)); border: 2px solid color-mix(in srgb, var(--tpl-accent) 40%, white); border-radius: 14px; padding: 22px 28px; text-align: center; margin-bottom: 22px; }
+  .amount-hero .label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--tpl-primary); margin-bottom: 6px; }
+  .amount-hero .value { font-size: 38px; font-weight: 900; color: var(--tpl-primary); line-height: 1; }
+  .amount-hero .method-badge { display: inline-block; margin-top: 10px; background: var(--tpl-primary); color: var(--tpl-header-fg); padding: 4px 14px; border-radius: 999px; font-size: 12px; font-weight: 600; }
 
   /* Info grid */
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px; }
-  .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; }
+  .info-card { background: #f8fafc; border: 1px solid var(--tpl-border); border-radius: 8px; padding: 12px 16px; }
   .info-card .ic-label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
-  .info-card .ic-value { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .info-card .ic-value { font-size: 13px; font-weight: 600; color: var(--tpl-primary); }
   .info-card .ic-sub   { font-size: 11px; color: #64748b; margin-top: 2px; }
 
   /* Allocations table */
   .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; margin-bottom: 8px; margin-top: 20px; }
   table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  thead tr { background: #1e293b; color: #fff; }
+  thead tr { background: var(--tpl-header-bg); color: var(--tpl-header-fg); }
   thead th { padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
   th.r, td.r { text-align: right; }
   tbody tr:nth-child(even) { background: #f8fafc; }
-  tbody td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; vertical-align: middle; }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid var(--tpl-border); font-size: 12px; vertical-align: middle; }
   tfoot td { padding: 9px 12px; background: #f1f5f9; font-weight: 700; font-size: 12px; }
 
   /* Footer */
-  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end; }
+  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--tpl-border); display: flex; justify-content: space-between; align-items: flex-end; }
   .footer .note { font-size: 10px; color: #94a3b8; line-height: 1.6; }
   .sig-block { text-align: center; }
   .sig-line  { width: 160px; border-top: 1px solid #374151; margin-bottom: 4px; }
   .sig-label { font-size: 10px; color: #6b7280; }
 
   /* Stamp */
-  .stamp { display: inline-block; border: 3px solid #059669; color: #059669; font-size: 16px; font-weight: 900; letter-spacing: .1em; padding: 6px 18px; border-radius: 6px; transform: rotate(-6deg); margin-top: 8px; text-transform: uppercase; }
+  .stamp { display: inline-block; border: 3px solid var(--tpl-accent); color: var(--tpl-accent); font-size: 16px; font-weight: 900; letter-spacing: .1em; padding: 6px 18px; border-radius: 6px; transform: rotate(-6deg); margin-top: 8px; text-transform: uppercase; }
 
   @media print {
     .print-bar { display: none; }

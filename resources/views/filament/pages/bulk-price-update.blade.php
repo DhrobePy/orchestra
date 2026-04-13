@@ -338,9 +338,29 @@
   </div>
 
   {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-  {{-- CARD: Variant Prices Table                                              --}}
+  {{-- CARD: Variant Prices Table  (Alpine-driven — no wire:model on inputs)  --}}
   {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-  <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 shadow-sm">
+  <div
+    x-data="{
+      prices: @js($variantPrices),
+      collectAndSave() {
+        const rows = this.$el.querySelectorAll('[data-vid]');
+        const collected = {};
+        rows.forEach(row => {
+          const vid = row.dataset.vid;
+          const priceInput = row.querySelector('[data-price]');
+          const dateInput  = row.querySelector('[data-date]');
+          collected[vid] = {
+            price:          priceInput ? priceInput.value : '',
+            effective_date: dateInput  ? dateInput.value  : '',
+          };
+        });
+        $wire.saveWithPrices(collected);
+      }
+    }"
+    wire:key="price-table-{{ $productId }}"
+    class="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 shadow-sm"
+  >
 
     {{-- Table header --}}
     <div class="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-6 py-4">
@@ -380,7 +400,7 @@
                 && (float)$row['weight'] === (float)$baseWeight
                 && $row['branch_id'] == $baseBranchId;
             @endphp
-            <tr class="{{ $isBase ? 'bpu-tr-base' : '' }}">
+            <tr data-vid="{{ $variantId }}" class="{{ $isBase ? 'bpu-tr-base' : '' }}">
 
               {{-- Name --}}
               <td>
@@ -415,14 +435,15 @@
                 <span class="bpu-badge {{ $bc }}">{{ $row['branch'] }}</span>
               </td>
 
-              {{-- Price --}}
+              {{-- Price — plain HTML input, value set by PHP, collected by Alpine on save --}}
               <td style="text-align:right;">
                 <div class="inline-flex items-center justify-end">
                   <span class="bpu-pfx">৳</span>
                   <input
                     type="number"
                     class="bpu-cell-price"
-                    wire:model.defer="variantPrices.{{ $variantId }}.price"
+                    data-price
+                    value="{{ $variantPrices[$variantId]['price'] ?? '' }}"
                     step="0.01"
                     min="0"
                     placeholder="0.00"
@@ -435,8 +456,9 @@
                 <input
                   type="date"
                   class="bpu-control"
+                  data-date
+                  value="{{ $variantPrices[$variantId]['effective_date'] ?? now()->toDateString() }}"
                   style="width:140px;padding:5px 10px;font-size:12px;"
-                  wire:model.defer="variantPrices.{{ $variantId }}.effective_date"
                 >
               </td>
 
@@ -445,18 +467,18 @@
         </tbody>
       </table>
     </div>
-  </div>
 
-  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-  {{-- Save footer                                                             --}}
-  {{-- ═══════════════════════════════════════════════════════════════════════ --}}
-  <div class="flex justify-end pb-8">
-    <button class="bpu-btn-save" wire:click="save" type="button"
-            wire:loading.attr="disabled" wire:target="save">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      <span wire:loading.remove wire:target="save">Save All Prices</span>
-      <span wire:loading wire:target="save">Saving…</span>
-    </button>
+    {{-- ── Save footer (inside Alpine x-data scope) ─────────────────────── --}}
+    <div class="flex justify-end px-6 py-5 border-t border-gray-100 dark:border-white/10">
+      <button class="bpu-btn-save" type="button"
+              x-on:click="collectAndSave()"
+              wire:loading.attr="disabled" wire:target="saveWithPrices">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span wire:loading.remove wire:target="saveWithPrices">Save All Prices</span>
+        <span wire:loading wire:target="saveWithPrices">Saving…</span>
+      </button>
+    </div>
+
   </div>
 
   {{-- ── No variants found ──────────────────────────────────────────────── --}}

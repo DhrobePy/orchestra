@@ -11,6 +11,7 @@
         "binarybuilds/filament-command-runner": "^1.2",
         "crumbls/layup": "^1.2",
         "filament/filament": "^5.4",
+        "google/apiclient": "^2.15",
         "hammadzafar05/mobile-bottom-nav": "^1.2",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",

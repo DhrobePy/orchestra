@@ -7,6 +7,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Invoice template preview (admin only)
+Route::get('/invoice-template/{template}/preview', [PrintController::class, 'previewTemplate'])
+    ->name('invoice.template.preview')
+    ->middleware(['auth']);
+
 // ── Print & Export routes (auth protected) ─────────────────────────────────
 Route::middleware(['auth'])->group(function () {
     Route::get('/print/customer/{id}/statement', [PrintController::class, 'customerStatement'])
@@ -20,4 +25,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/export/customer/{id}/ledger.csv', [PrintController::class, 'exportLedgerCsv'])
         ->name('export.customer.ledger.csv');
+
+    Route::get('/print/expense-voucher/{id}', [PrintController::class, 'expenseVoucher'])
+        ->name('print.expense-voucher');
 });

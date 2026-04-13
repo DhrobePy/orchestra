@@ -5,38 +5,50 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Invoice — {{ $order->order_number }}</title>
 <style>
+  /* ── Template CSS variables (overridden by InvoiceTemplate if set) ── */
+  :root {
+    --tpl-primary:   #1e3a5f;
+    --tpl-accent:    #f59e0b;
+    --tpl-text:      #111827;
+    --tpl-border:    #e5e7eb;
+    --tpl-header-bg: #1e293b;
+    --tpl-header-fg: #ffffff;
+    --tpl-font:      'Segoe UI', Arial, sans-serif;
+  }
+  @isset($tplCss) {!! $tplCss !!} @endisset
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #fff; }
+  body { font-family: var(--tpl-font); font-size: 12px; color: var(--tpl-text); background: #fff; }
   .page { max-width: 900px; margin: 0 auto; padding: 32px 36px; }
 
   /* Header */
-  .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid #1e293b; margin-bottom: 22px; }
-  .brand { font-size: 24px; font-weight: 900; color: #0f172a; }
+  .invoice-header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 20px; border-bottom: 3px solid var(--tpl-header-bg); margin-bottom: 22px; }
+  .brand { font-size: 24px; font-weight: 900; color: var(--tpl-primary); }
   .brand-sub { font-size: 11px; color: #94a3b8; margin-top: 2px; }
   .inv-meta { text-align: right; }
-  .inv-number { font-size: 22px; font-weight: 800; color: #1e40af; }
+  .inv-number { font-size: 22px; font-weight: 800; color: var(--tpl-primary); }
   .inv-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: .08em; }
   .status-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 11px; font-weight: 700; margin-top: 6px; color: white; }
 
   /* Address block */
   .address-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
-  .addr-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 16px; }
+  .addr-card { background: #f8fafc; border: 1px solid var(--tpl-border); border-radius: 8px; padding: 14px 16px; }
   .addr-card .label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
-  .addr-card .name { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
+  .addr-card .name { font-size: 14px; font-weight: 700; color: var(--tpl-primary); margin-bottom: 3px; }
   .addr-card .line { font-size: 11px; color: #64748b; margin-top: 2px; }
 
   /* Items table */
   table.items { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-  table.items thead tr { background: #1e293b; color: #fff; }
+  table.items thead tr { background: var(--tpl-header-bg); color: var(--tpl-header-fg); }
   table.items thead th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
   table.items th.r, table.items td.r { text-align: right; }
   table.items tbody tr:nth-child(even) { background: #f8fafc; }
-  table.items tbody td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; vertical-align: middle; }
+  table.items tbody td { padding: 9px 12px; border-bottom: 1px solid var(--tpl-border); font-size: 12px; vertical-align: middle; }
   table.items tfoot td { padding: 8px 12px; font-size: 12px; background: #f1f5f9; }
 
   /* Totals */
   .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 24px; }
-  .totals-box { min-width: 280px; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .totals-box { min-width: 280px; border: 1px solid var(--tpl-border); border-radius: 10px; overflow: hidden; }
   .totals-row { display: flex; justify-content: space-between; padding: 8px 16px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .totals-row:last-child { border-bottom: none; }
   .totals-row.grand { background: #1e293b; color: #fff; font-weight: 800; font-size: 15px; }

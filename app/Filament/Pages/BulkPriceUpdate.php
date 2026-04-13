@@ -144,6 +144,16 @@ class BulkPriceUpdate extends Page
 
     // ── Save ──────────────────────────────────────────────────────────────────
 
+    /**
+     * Called by the Alpine.js save button — receives prices collected directly
+     * from the DOM so we never rely on wire:model syncing for the price table.
+     */
+    public function saveWithPrices(array $prices): void
+    {
+        $this->variantPrices = $prices;
+        $this->save();
+    }
+
     public function save(): void
     {
         if (! $this->productId) {

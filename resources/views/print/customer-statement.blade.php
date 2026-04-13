@@ -5,32 +5,44 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Account Statement — {{ $customer->name }}</title>
 <style>
+  /* ── Template CSS variables ── */
+  :root {
+    --tpl-primary:   #1e3a5f;
+    --tpl-accent:    #3b82f6;
+    --tpl-text:      #111827;
+    --tpl-border:    #e5e7eb;
+    --tpl-header-bg: #1e3a5f;
+    --tpl-header-fg: #ffffff;
+    --tpl-font:      'Segoe UI', Arial, sans-serif;
+  }
+  @isset($tplCss) {!! $tplCss !!} @endisset
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1f2937; background: #fff; }
+  body { font-family: var(--tpl-font); font-size: 12px; color: var(--tpl-text); background: #fff; }
   .page { max-width: 900px; margin: 0 auto; padding: 32px 36px; }
 
   /* Header */
-  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 3px solid #1e293b; }
-  .header-left .company { font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -.5px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 3px solid var(--tpl-header-bg); }
+  .header-left .company { font-size: 22px; font-weight: 800; color: var(--tpl-primary); letter-spacing: -.5px; }
   .header-left .tagline { font-size: 11px; color: #94a3b8; margin-top: 2px; }
   .header-right { text-align: right; }
-  .header-right .doc-title { font-size: 18px; font-weight: 700; color: #1e40af; }
+  .header-right .doc-title { font-size: 18px; font-weight: 700; color: var(--tpl-primary); }
   .header-right .period { font-size: 11px; color: #6b7280; margin-top: 3px; }
 
   /* Customer info */
   .customer-block { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .info-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; }
+  .info-card { background: #f8fafc; border: 1px solid var(--tpl-border); border-radius: 8px; padding: 12px 16px; }
   .info-card .label { font-size: 9px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px; }
-  .info-card .value { font-size: 13px; font-weight: 600; color: #0f172a; }
+  .info-card .value { font-size: 13px; font-weight: 600; color: var(--tpl-primary); }
   .info-card .sub   { font-size: 11px; color: #64748b; margin-top: 2px; }
 
-  /* Summary cards */
+  /* Summary cards — semantic colours kept intentionally */
   .summary-row { display: flex; gap: 12px; margin-bottom: 20px; }
   .summary-card { flex: 1; border-radius: 10px; padding: 12px 14px; text-align: center; }
   .summary-card .s-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
   .summary-card .s-value { font-size: 17px; font-weight: 800; }
-  .card-blue   { background: #eff6ff; border: 1px solid #bfdbfe; }
-  .card-blue .s-label { color: #3b82f6; } .card-blue .s-value { color: #1d4ed8; }
+  .card-primary { background: color-mix(in srgb, var(--tpl-primary) 10%, white); border: 1px solid color-mix(in srgb, var(--tpl-primary) 25%, white); }
+  .card-primary .s-label { color: var(--tpl-primary); } .card-primary .s-value { color: var(--tpl-primary); }
   .card-red    { background: #fef2f2; border: 1px solid #fecaca; }
   .card-red .s-label  { color: #ef4444; } .card-red .s-value  { color: #dc2626; }
   .card-green  { background: #f0fdf4; border: 1px solid #bbf7d0; }
@@ -40,30 +52,30 @@
 
   /* Table */
   table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-  thead tr { background: #1e293b; color: #fff; }
+  thead tr { background: var(--tpl-header-bg); color: var(--tpl-header-fg); }
   thead th { padding: 10px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
   th.num, td.num { text-align: right; }
   tbody tr:nth-child(even) { background: #f8fafc; }
   tbody tr:hover { background: #f1f5f9; }
-  tbody td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; font-size: 12px; vertical-align: middle; }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--tpl-border); font-size: 12px; vertical-align: middle; }
   td.debit  { color: #dc2626; font-weight: 600; }
   td.credit { color: #16a34a; font-weight: 600; }
   td.balance-pos { color: #dc2626; font-weight: 700; }
   td.balance-neg { color: #16a34a; font-weight: 700; }
-  tfoot tr { background: #1e293b; color: #fff; }
+  tfoot tr { background: var(--tpl-header-bg); color: var(--tpl-header-fg); }
   tfoot td { padding: 10px 12px; font-weight: 700; font-size: 12px; }
 
   /* Footer */
-  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end; }
+  .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--tpl-border); display: flex; justify-content: space-between; align-items: flex-end; }
   .footer .note { font-size: 10px; color: #94a3b8; }
   .footer .sig-block { text-align: center; }
   .footer .sig-line { width: 160px; border-top: 1px solid #374151; margin-bottom: 4px; }
   .footer .sig-label { font-size: 10px; color: #6b7280; }
 
   /* Print controls */
-  .print-bar { background: #1e293b; color: #fff; padding: 10px 36px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
-  .print-bar .print-btn { background: #3b82f6; color: #fff; border: none; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .print-bar .close-btn { background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+  .print-bar { background: var(--tpl-header-bg); color: var(--tpl-header-fg); padding: 10px 36px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 0; }
+  .print-bar .print-btn { background: var(--tpl-accent); color: #fff; border: none; padding: 7px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .print-bar .close-btn { background: transparent; color: rgba(255,255,255,.6); border: 1px solid rgba(255,255,255,.3); padding: 7px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; }
 
   @media print {
     .print-bar { display: none; }
@@ -140,7 +152,7 @@
     $avail   = max(0, $limit - $used);
   @endphp
   <div class="summary-row">
-    <div class="summary-card card-blue">
+    <div class="summary-card card-primary">
       <div class="s-label">Credit Limit</div>
       <div class="s-value">৳ {{ number_format($limit, 2) }}</div>
     </div>

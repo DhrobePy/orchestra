@@ -9,6 +9,7 @@ use App\Models\Entity;
 use App\Models\Field;
 use App\Services\RolePermissionService;
 use BackedEnum;
+use Filament\Actions\Action as RowAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -21,6 +22,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Schema;
@@ -66,8 +68,25 @@ class DynamicRecordResource extends Resource
         'trip_id'         => 'trip_assignments',
         'from_account_id' => 'bank_accounts',
         'to_account_id'   => 'bank_accounts',
+        'bank_account_id' => 'bank_accounts',
         'manager_id'      => 'employees',
         'parent_id'       => null, // self-referencing chart-of-accounts — skip
+    ];
+
+    /**
+     * Context-aware FK overrides: [entity_table_name => [field_name => target_table]].
+     * These take priority over global $fkTableOverrides for the specified entity.
+     */
+    private static array $contextFkOverrides = [
+        'expense_subcategories' => [
+            'category_id' => 'expense_categories',
+        ],
+        'expense_vouchers' => [
+            'category_id'    => 'expense_categories',
+            'subcategory_id' => 'expense_subcategories',
+            'bank_account_id'=> 'bank_accounts',
+            'approved_by'    => null, // plain integer
+        ],
     ];
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -203,8 +222,8 @@ PHP);
 
         $components = $entity->fields
             ->reject(fn (Field $f) => in_array($f->name, $hidden, true))
-            ->map(function (Field $f) use ($readonly) {
-                $component = static::makeField($f);
+            ->map(function (Field $f) use ($readonly, $entity) {
+                $component = static::makeField($f, $entity);
                 // If field is in readonly list, force-disable regardless of is_editable
                 if (in_array($f->name, $readonly, true)) {
                     $component = $component->disabled();
@@ -261,7 +280,7 @@ PHP);
                 'boolean' => TernaryFilter::make($f->name)->label($f->label),
                 'select'  => SelectFilter::make($f->name)
                     ->label($f->label)
-                    ->options($f->options ?? []),
+                    ->options(static::normalizeOptions($f->options)),
                 default   => null,
             })
             ->filter()
@@ -270,6 +289,17 @@ PHP);
 
         // ── Row actions (conditionally shown) ──────────────────────────────
         $recordActions = [];
+
+        // Print action for expense vouchers
+        if ($entity->table_name === 'expense_vouchers') {
+            $recordActions[] = RowAction::make('print')
+                ->label('Print')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn ($record) => route('print.expense-voucher', $record->getKey()))
+                ->openUrlInNewTab();
+        }
+
         if ($canEdit) {
             $recordActions[] = EditAction::make()
                 ->url(fn ($record) => static::getUrl('edit', [
@@ -301,11 +331,88 @@ PHP);
     // Form field builder
     // ─────────────────────────────────────────────────────────────────────────
 
-    protected static function makeField(Field $field): mixed
+    protected static function makeField(Field $field, ?Entity $entity = null): mixed
     {
-        // FK field: integer ending in _id → searchable relationship select
+        $entityTable = $entity?->table_name ?? '';
+
+        // ── Special: voucher_number — read-only, auto-generated on save ──────
+        if ($field->name === 'voucher_number') {
+            return TextInput::make('voucher_number')
+                ->label($field->label)
+                ->readOnly()
+                ->dehydrated(false)
+                ->placeholder('Auto-generated on save')
+                ->helperText('Will be assigned automatically when the record is created.');
+        }
+
+        // ── Special: expense_vouchers — payment_method with live() ───────────
+        if ($entityTable === 'expense_vouchers' && $field->name === 'payment_method') {
+            return Select::make('payment_method')
+                ->label($field->label)
+                ->options(static::normalizeOptions($field->options))
+                ->required($field->is_required)
+                ->searchable()
+                ->placeholder('Select payment method…')
+                ->live();
+        }
+
+        // ── Special: expense_vouchers — bank_account_id conditionally shown ──
+        if ($entityTable === 'expense_vouchers' && $field->name === 'bank_account_id') {
+            return Select::make('bank_account_id')
+                ->label($field->label)
+                ->options(function () {
+                    try {
+                        return DB::table('bank_accounts')
+                            ->where('is_active', true)
+                            ->orderBy('bank_name')
+                            ->get()
+                            ->mapWithKeys(fn ($row) => [
+                                $row->id => $row->bank_name . ' — ' . $row->account_name . ' (' . $row->account_number . ')',
+                            ])
+                            ->toArray();
+                    } catch (\Throwable) {
+                        return [];
+                    }
+                })
+                ->searchable()
+                ->placeholder('Select bank account…')
+                ->hidden(fn (Get $get): bool => !in_array($get('payment_method'), ['bank_transfer', 'cheque'], true))
+                ->nullable();
+        }
+
+        // ── Special: expense_vouchers — category_id with live() ─────────────
+        if ($entityTable === 'expense_vouchers' && $field->name === 'category_id') {
+            $select = static::makeFkSelect($field, $entityTable);
+            if ($select) {
+                return $select->live();
+            }
+        }
+
+        // ── Special: expense_vouchers — subcategory_id cascades from category ─
+        if ($entityTable === 'expense_vouchers' && $field->name === 'subcategory_id') {
+            return Select::make('subcategory_id')
+                ->label($field->label)
+                ->options(function (Get $get) {
+                    $catId = $get('category_id');
+                    try {
+                        $query = DB::table('expense_subcategories');
+                        try { $query->whereNull('deleted_at'); } catch (\Throwable) {}
+                        if ($catId) {
+                            $query->where('category_id', $catId);
+                        }
+                        return $query->orderBy('name')->pluck('name', 'id')->toArray();
+                    } catch (\Throwable) {
+                        return [];
+                    }
+                })
+                ->searchable()
+                ->placeholder('Select subcategory…')
+                ->nullable();
+        }
+
+        // ── FK field: integer ending in _id → relationship select ─────────────
         if ($field->type === 'integer' && str_ends_with($field->name, '_id')) {
-            $fkSelect = static::makeFkSelect($field);
+            $fkSelect = static::makeFkSelect($field, $entityTable);
             if ($fkSelect !== null) {
                 return $field->is_editable ? $fkSelect : $fkSelect->disabled();
             }
@@ -342,7 +449,7 @@ PHP);
 
             'select' => Select::make($field->name)
                 ->label($field->label)
-                ->options($field->options ?? [])
+                ->options(static::normalizeOptions($field->options))
                 ->required($field->is_required)
                 ->searchable()
                 ->placeholder('Select…'),
@@ -373,10 +480,11 @@ PHP);
     }
 
     /**
-     * Build a searchable Select that loads records from the related entity's table.
-     * Returns null if the related table cannot be resolved.
+     * Build a preloaded Select for a FK field (integer ending in _id).
+     * Uses ->options() so all items are visible without needing to type.
+     * Returns null if the related table cannot be resolved or is explicitly excluded.
      */
-    protected static function makeFkSelect(Field $field): ?Select
+    protected static function makeFkSelect(Field $field, string $entityTable = ''): ?Select
     {
         // Per-request cache of entity table map
         static $entityMap = null;
@@ -384,20 +492,27 @@ PHP);
             $entityMap = Entity::all()->keyBy('table_name');
         }
 
-        // 1. Check explicit overrides first
-        if (array_key_exists($field->name, static::$fkTableOverrides)) {
+        // 1. Context-aware overrides (entity-specific FK mappings)
+        if ($entityTable && isset(static::$contextFkOverrides[$entityTable][$field->name])) {
+            $targetTable = static::$contextFkOverrides[$entityTable][$field->name];
+            if ($targetTable === null) {
+                return null; // explicitly excluded for this entity
+            }
+        }
+        // 2. Global overrides
+        elseif (array_key_exists($field->name, static::$fkTableOverrides)) {
             $targetTable = static::$fkTableOverrides[$field->name];
             if ($targetTable === null) {
-                return null; // explicitly excluded
+                return null;
             }
         } else {
-            // 2. Auto-resolve: strip _id and try plural candidates
+            // 3. Auto-resolve: strip _id and try plural candidates
             $stem       = Str::beforeLast($field->name, '_id');
             $candidates = [
-                Str::plural($stem),           // supplier_id → suppliers
-                $stem,                         // exact match
-                $stem . 'es',                  // branch_id → branches
-                Str::snake(Str::plural(Str::studly($stem))), // journal_entry_id → journal_entries
+                Str::plural($stem),
+                $stem,
+                $stem . 'es',
+                Str::snake(Str::plural(Str::studly($stem))),
             ];
 
             $targetTable = null;
@@ -408,7 +523,7 @@ PHP);
                 }
             }
 
-            // 3. Fuzzy prefix fallback
+            // 4. Fuzzy prefix fallback
             if (!$targetTable) {
                 $match       = Entity::where('table_name', 'like', "{$stem}%")->first();
                 $targetTable = $match?->table_name;
@@ -424,35 +539,53 @@ PHP);
 
         $titleField = $relatedEntity?->title_field ?? 'id';
 
+        // Special label format for bank_accounts
+        if ($targetTable === 'bank_accounts') {
+            return Select::make($field->name)
+                ->label($field->label)
+                ->required($field->is_required)
+                ->searchable()
+                ->options(function () {
+                    try {
+                        return DB::table('bank_accounts')
+                            ->where('is_active', true)
+                            ->orderBy('bank_name')
+                            ->get()
+                            ->mapWithKeys(fn ($row) => [
+                                $row->id => $row->bank_name . ' — ' . $row->account_name . ' (' . $row->account_number . ')',
+                            ])
+                            ->toArray();
+                    } catch (\Throwable) {
+                        return [];
+                    }
+                })
+                ->placeholder('Select bank account…');
+        }
+
+        // Standard FK select — preloaded options
         return Select::make($field->name)
             ->label($field->label)
             ->required($field->is_required)
             ->searchable()
-            ->getSearchResultsUsing(function (string $search) use ($targetTable, $titleField): array {
+            ->options(function () use ($targetTable, $titleField): array {
                 try {
-                    return DB::table($targetTable)
-                        ->whereNull('deleted_at')
-                        ->where($titleField, 'like', "%{$search}%")
+                    $query = DB::table($targetTable);
+                    // Soft-delete awareness
+                    try {
+                        if (in_array('deleted_at', DB::getSchemaBuilder()->getColumnListing($targetTable))) {
+                            $query->whereNull('deleted_at');
+                        }
+                    } catch (\Throwable) {}
+                    return $query
                         ->orderBy($titleField)
-                        ->limit(50)
+                        ->limit(500)
                         ->pluck($titleField, 'id')
                         ->toArray();
                 } catch (\Throwable) {
                     return [];
                 }
             })
-            ->getOptionLabelUsing(function ($value) use ($targetTable, $titleField): ?string {
-                if (!$value) {
-                    return null;
-                }
-                try {
-                    return (string) DB::table($targetTable)
-                        ->where('id', $value)
-                        ->value($titleField);
-                } catch (\Throwable) {
-                    return (string) $value;
-                }
-            });
+            ->placeholder('Select…');
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -507,6 +640,27 @@ PHP);
                 ->sortable()
                 ->limit(50),
         };
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Some older field records were seeded with double-encoded JSON.
+     * The Eloquent 'array' cast decodes once, leaving a string.
+     * This method always returns a proper PHP array regardless.
+     */
+    protected static function normalizeOptions(mixed $options): array
+    {
+        if (is_array($options)) {
+            return $options;
+        }
+        if (is_string($options) && $options !== '') {
+            $decoded = json_decode($options, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
     }
 
     // ─────────────────────────────────────────────────────────────────────────
